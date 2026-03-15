@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b3c5d" />
+    <title>NutriPath AI | Fuel the Future</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="home">
+    <header class="topbar">
+      <div class="container nav">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark">N</span>
+          <span>NutriPath AI</span>
+        </a>
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a class="nav-link" data-nav="home" href="./index.html">Home</a>
+          <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
+          <a class="nav-link" data-nav="results" href="./results.html">Results</a>
+          <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
+          <a class="nav-link" data-nav="dashboard" href="./dashboard.html">NGO Dashboard</a>
+          <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div class="badges">
+          <span class="badge">AI Triage</span>
+          <span class="badge">Local Meal Planning</span>
+          <span class="badge">Offline-Ready PWA</span>
+        </div>
+        <h1>Detect malnutrition early and deliver practical nutrition action in minutes.</h1>
+        <p>
+          NutriPath AI helps caregivers, health workers, and NGOs run screenings, generate low-cost local meal
+          plans, and connect families to nearby support services from one web platform.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="./assessment.html">Start AI Assessment</a>
+          <a class="btn btn-secondary" href="./dashboard.html">Open NGO Dashboard</a>
+        </div>
+      </section>
+
+      <section class="section grid-3">
+        <article class="card feature-card">
+          <h3>1. Guided Risk Screening</h3>
+          <p>
+            Capture MUAC, symptoms, diet diversity, and household context through a simple mobile-first form with low-literacy labels.
+          </p>
+        </article>
+        <article class="card feature-card">
+          <h3>2. AI-Powered Action Plan</h3>
+          <p>
+            Get a risk score, urgent referral guidance, probable deficiencies, and a household nutrition plan using local affordable foods.
+          </p>
+        </article>
+        <article class="card feature-card">
+          <h3>3. Resource Routing</h3>
+          <p>
+            Instantly find clinics, food support points, and NGO services with route-ready map cards and travel distance estimates.
+          </p>
+        </article>
+      </section>
+
+      <section class="section grid-2">
+        <article class="card">
+          <h2>Built for underserved communities</h2>
+          <p class="subtle">
+            Interface includes icon-first controls, voice readouts, and fast loading on low bandwidth. Data can be captured in field visits and synced later.
+          </p>
+          <div class="kpi">
+            <span>Average screening time</span>
+            <strong>4-6 min</strong>
+          </div>
+          <div class="kpi">
+            <span>AI recommendation turnaround</span>
+            <strong>&lt; 2 sec</strong>
+          </div>
+          <div class="kpi">
+            <span>Designed users</span>
+            <strong>Caregivers + CHWs + NGOs</strong>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Core flow inside the app</h2>
+          <table class="table" aria-label="Core app flow">
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>What user does</th>
+                <th>What app returns</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Fill screening form</td>
+                <td>Validated health + diet profile</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Run AI assessment</td>
+                <td>Risk class + urgency + deficiency signals</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Open meal planner</td>
+                <td>7-day local meal recommendations</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Check map</td>
+                <td>Nearby support points sorted by distance</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>Track follow-up</td>
+                <td>Case history + hotspot dashboard</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+      </section>
+    </main>
+
+    <footer class="container footer">NutriPath AI for Fuel the Future Hackathon · <span id="year"></span></footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

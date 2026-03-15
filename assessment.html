@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b3c5d" />
+    <title>NutriPath AI | Assessment</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="assessment">
+    <header class="topbar">
+      <div class="container nav">
+        <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath AI</span></a>
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a class="nav-link" data-nav="home" href="./index.html">Home</a>
+          <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
+          <a class="nav-link" data-nav="results" href="./results.html">Results</a>
+          <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
+          <a class="nav-link" data-nav="dashboard" href="./dashboard.html">NGO Dashboard</a>
+          <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="page-header">
+        <h1 class="page-title">AI Malnutrition Risk Assessment</h1>
+        <p class="page-desc">
+          Complete this form during a household visit or self-check. The system produces a risk class, urgency actions,
+          probable deficiencies, and a local affordable meal plan.
+        </p>
+      </section>
+
+      <section class="card section">
+        <div class="field" style="margin-bottom: 0.8rem;">
+          <label for="progress">Assessment progress</label>
+          <div class="progress" id="progress" aria-label="Form completion progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span></span>
+          </div>
+        </div>
+
+        <form id="assessment-form" novalidate>
+          <h3>1) Profile</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label for="role">Role</label>
+              <select id="role" name="role" required>
+                <option value="">Select role</option>
+                <option>Caregiver</option>
+                <option>Community Health Worker</option>
+                <option>NGO Staff</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="language">Preferred language</label>
+              <select id="language" name="language" required>
+                <option value="">Select language</option>
+                <option>English</option>
+                <option>Swahili</option>
+                <option>Hindi</option>
+                <option>Bengali</option>
+                <option>Spanish</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="householdName">Household name / ID</label>
+              <input id="householdName" name="householdName" placeholder="e.g., HH-102 or family surname" required />
+            </div>
+            <div class="field">
+              <label for="community">Community</label>
+              <select id="community" name="community" required></select>
+            </div>
+            <div class="field">
+              <label for="ageMonths">Age (months)</label>
+              <input id="ageMonths" name="ageMonths" type="number" min="0" max="720" required />
+            </div>
+            <div class="field">
+              <label for="sex">Sex</label>
+              <select id="sex" name="sex" required>
+                <option value="">Select sex</option>
+                <option>Female</option>
+                <option>Male</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="householdSize">Household size</label>
+              <input id="householdSize" name="householdSize" type="number" min="1" max="20" required />
+            </div>
+            <div class="field">
+              <label for="weeklyBudget">Food budget (USD/week)</label>
+              <input id="weeklyBudget" name="weeklyBudget" type="number" min="1" max="500" required />
+            </div>
+          </div>
+
+          <h3>2) Health and Growth</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label for="weight">Weight (kg)</label>
+              <input id="weight" name="weight" type="number" step="0.1" min="1" max="150" required />
+            </div>
+            <div class="field">
+              <label for="height">Height (cm)</label>
+              <input id="height" name="height" type="number" step="0.1" min="30" max="220" required />
+            </div>
+            <div class="field">
+              <label for="muac">MUAC (cm)</label>
+              <input id="muac" name="muac" type="number" step="0.1" min="8" max="35" required />
+            </div>
+            <div class="field">
+              <label for="mealsPerDay">Meals per day</label>
+              <input id="mealsPerDay" name="mealsPerDay" type="number" min="1" max="8" required />
+            </div>
+            <div class="field">
+              <label for="dietDiversity">Diet diversity score (0-10)</label>
+              <input id="dietDiversity" name="dietDiversity" type="number" min="0" max="10" required />
+            </div>
+            <div class="field">
+              <label for="waterSource">Water source</label>
+              <select id="waterSource" name="waterSource" required>
+                <option value="">Select source</option>
+                <option value="safe">Safe (treated/piped)</option>
+                <option value="unsafe">Unsafe (untreated/open)</option>
+              </select>
+            </div>
+          </div>
+
+          <h3>3) Symptoms (select all that apply)</h3>
+          <div class="checkbox-grid" id="symptom-list"></div>
+
+          <h3>4) Available local foods</h3>
+          <p class="small-text">Choose foods currently available in the household or local market.</p>
+          <div class="checkbox-grid" id="food-list"></div>
+
+          <h3>5) Optional photo input</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label for="foodPhoto">Meal/Pantry photo (optional)</label>
+              <input id="foodPhoto" name="foodPhoto" type="file" accept="image/*" />
+            </div>
+            <div class="field">
+              <label for="notes">Field notes</label>
+              <textarea id="notes" name="notes" rows="3" placeholder="Any contextual notes from visit"></textarea>
+            </div>
+          </div>
+
+          <div id="validation-message" class="alert alert-danger hide" role="alert"></div>
+          <div class="cta-row" style="margin-top: 1rem;">
+            <button class="btn btn-primary" type="submit">Run AI Assessment</button>
+            <a class="btn btn-secondary" href="./index.html">Cancel</a>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="container footer">NutriPath AI for Fuel the Future Hackathon · <span id="year"></span></footer>
+
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
+    <script src="./assessment.js"></script>
+  </body>
+</html>

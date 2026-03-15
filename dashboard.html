@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b3c5d" />
+    <title>NutriPath AI | NGO Dashboard</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="dashboard">
+    <header class="topbar">
+      <div class="container nav">
+        <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath AI</span></a>
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a class="nav-link" data-nav="home" href="./index.html">Home</a>
+          <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
+          <a class="nav-link" data-nav="results" href="./results.html">Results</a>
+          <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
+          <a class="nav-link" data-nav="dashboard" href="./dashboard.html">NGO Dashboard</a>
+          <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="page-header">
+        <h1 class="page-title">NGO Intervention Dashboard</h1>
+        <p class="page-desc">Track risk trends, identify hotspots, and prioritize follow-up outreach across communities.</p>
+      </section>
+
+      <section class="section metric-grid">
+        <article class="metric"><span>Total assessments</span><strong id="m-total">0</strong></article>
+        <article class="metric"><span>High or urgent</span><strong id="m-critical">0</strong></article>
+        <article class="metric"><span>Follow-ups due this week</span><strong id="m-follow">0</strong></article>
+        <article class="metric"><span>Avg risk score</span><strong id="m-avg">0</strong></article>
+      </section>
+
+      <section class="section grid-2">
+        <article class="card">
+          <h3>Risk Distribution</h3>
+          <canvas id="risk-chart" height="220"></canvas>
+        </article>
+        <article class="card">
+          <h3>Community Hotspots</h3>
+          <canvas id="hotspot-chart" height="220"></canvas>
+        </article>
+      </section>
+
+      <section class="section grid-2">
+        <article class="card">
+          <h3>Recent Cases</h3>
+          <table class="table" id="recent-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Household</th>
+                <th>Community</th>
+                <th>Risk</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </article>
+
+        <article class="card">
+          <h3>Action Queue</h3>
+          <div id="action-queue"></div>
+          <div class="cta-row" style="margin-top: 0.8rem;">
+            <a class="btn btn-primary" href="./assessment.html">Add New Screening</a>
+            <button class="btn btn-secondary" id="seed-demo" type="button">Load Demo Data</button>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="container footer">NutriPath AI for Fuel the Future Hackathon · <span id="year"></span></footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
+    <script src="./dashboard.js"></script>
+  </body>
+</html>
