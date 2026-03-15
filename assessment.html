@@ -53,14 +53,9 @@
             </div>
             <div class="field">
               <label for="language">Preferred language</label>
-              <select id="language" name="language" required>
-                <option value="">Select language</option>
-                <option>English</option>
-                <option>Swahili</option>
-                <option>Hindi</option>
-                <option>Bengali</option>
-                <option>Spanish</option>
-              </select>
+              <input id="language" name="language" list="language-options" placeholder="Search or type language" required />
+              <datalist id="language-options"></datalist>
+              <span class="field-hint">Search by language name or type manually.</span>
             </div>
             <div class="field">
               <label for="householdName">Household name / ID</label>
@@ -68,7 +63,9 @@
             </div>
             <div class="field">
               <label for="community">Community</label>
-              <select id="community" name="community" required></select>
+              <input id="community" name="community" list="community-options" placeholder="Search city, district, or community" required />
+              <datalist id="community-options"></datalist>
+              <span class="field-hint">Works with search and manual entry.</span>
             </div>
             <div class="field">
               <label for="ageMonths">Age (months)</label>
@@ -129,7 +126,11 @@
 
           <h3>4) Available local foods</h3>
           <p class="small-text">Choose foods currently available in the household or local market.</p>
-          <div class="checkbox-grid" id="food-list"></div>
+          <div class="field search-row">
+            <label for="food-search">Food search</label>
+            <input id="food-search" type="search" placeholder="Search foods (e.g., lentils, fish, spinach)" />
+          </div>
+          <div class="checkbox-grid scroll-grid" id="food-list"></div>
 
           <h3>5) Optional photo input</h3>
           <div class="form-grid">

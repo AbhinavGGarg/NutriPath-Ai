@@ -18,8 +18,9 @@
   });
 
   const latestReport = NutriApp.getCurrentReport();
-  if (latestReport?.payload?.community && communityNames.includes(latestReport.payload.community)) {
-    communitySelect.value = latestReport.payload.community;
+  const latestCommunityKey = latestReport?.payload?.communityKey || latestReport?.payload?.community;
+  if (latestCommunityKey && communityNames.includes(latestCommunityKey)) {
+    communitySelect.value = latestCommunityKey;
   }
 
   let mapCenter = NutriData.communities[communitySelect.value || communityNames[0]];
@@ -45,22 +46,26 @@
     const highRiskByCommunity = {};
 
     history.forEach((entry) => {
-      if (!entry?.payload?.community) return;
+      const label = entry?.payload?.community;
+      const key = entry?.payload?.communityKey || (label ? String(label).split(',')[0].trim() : '');
+      if (!key) return;
       if (!['High', 'Urgent'].includes(entry?.riskOutput?.category)) return;
-      const key = entry.payload.community;
-      highRiskByCommunity[key] = (highRiskByCommunity[key] || 0) + 1;
+      if (!highRiskByCommunity[key]) {
+        highRiskByCommunity[key] = { count: 0, label: label || key };
+      }
+      highRiskByCommunity[key].count += 1;
     });
 
-    Object.entries(highRiskByCommunity).forEach(([community, count]) => {
-      const point = NutriData.communities[community];
+    Object.entries(highRiskByCommunity).forEach(([communityKey, stats]) => {
+      const point = NutriData.communities[communityKey];
       if (!point) return;
       L.circle([point.lat, point.lng], {
         color: '#e63946',
         fillColor: '#e63946',
         fillOpacity: 0.22,
-        radius: 250 + count * 120
+        radius: 250 + stats.count * 120
       })
-        .bindPopup(`${community}<br/>High-risk cases: ${count}`)
+        .bindPopup(`${stats.label}<br/>High-risk cases: ${stats.count}`)
         .addTo(hotspotLayer);
     });
   }

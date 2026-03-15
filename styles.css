@@ -28,6 +28,7 @@ body {
     linear-gradient(180deg, #f7fbfb 0%, #edf4f5 100%);
   color: var(--ink);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 a {
@@ -40,7 +41,7 @@ img {
 }
 
 .container {
-  width: min(1120px, 92vw);
+  width: min(1120px, calc(100% - 2.2rem));
   margin: 0 auto;
 }
 
@@ -232,7 +233,7 @@ h4 {
 }
 
 .section {
-  padding: 1.2rem 0;
+  padding-block: 1.2rem;
 }
 
 .page-header {
@@ -257,6 +258,7 @@ h4 {
 .field {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .field label {
@@ -276,6 +278,10 @@ textarea {
   color: var(--ink);
 }
 
+input[list]::-webkit-calendar-picker-indicator {
+  opacity: 0.72;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
@@ -287,6 +293,21 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.45rem;
+}
+
+.scroll-grid {
+  max-height: 330px;
+  overflow: auto;
+  padding-right: 0.35rem;
+}
+
+.search-row {
+  margin: 0.55rem 0 0.7rem;
+}
+
+.field-hint {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
 }
 
 .checkbox-item {

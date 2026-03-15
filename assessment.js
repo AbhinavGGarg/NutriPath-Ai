@@ -17,17 +17,37 @@
 
   const symptomNode = document.getElementById('symptom-list');
   const foodNode = document.getElementById('food-list');
+  const foodSearchNode = document.getElementById('food-search');
   const communityNode = document.getElementById('community');
+  const communityListNode = document.getElementById('community-options');
+  const languageNode = document.getElementById('language');
+  const languageListNode = document.getElementById('language-options');
   const progressNode = document.getElementById('progress');
   const validationNode = document.getElementById('validation-message');
 
   const communityNames = Object.keys(NutriData.communities);
-  communityNames.forEach((name) => {
+  const communityLabels = communityNames
+    .map((name) => `${name}, ${NutriData.communities[name].country}`)
+    .sort((a, b) => a.localeCompare(b));
+
+  communityLabels.forEach((labelText) => {
     const option = document.createElement('option');
-    option.value = name;
-    option.textContent = `${name}, ${NutriData.communities[name].country}`;
-    communityNode.appendChild(option);
+    option.value = labelText;
+    communityListNode.appendChild(option);
   });
+
+  if (communityLabels.length) {
+    communityNode.value = communityLabels[0];
+  }
+
+  NutriData.languages
+    .slice()
+    .sort((a, b) => a.localeCompare(b))
+    .forEach((language) => {
+      const option = document.createElement('option');
+      option.value = language;
+      languageListNode.appendChild(option);
+    });
 
   symptoms.forEach((symptom) => {
     const label = document.createElement('label');
@@ -36,12 +56,16 @@
     symptomNode.appendChild(label);
   });
 
-  NutriData.foods.forEach((food) => {
+  const sortedFoods = NutriData.foods.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const foodFragment = document.createDocumentFragment();
+  sortedFoods.forEach((food) => {
     const label = document.createElement('label');
     label.className = 'checkbox-item';
+    label.dataset.foodName = food.name.toLowerCase();
     label.innerHTML = `<input type="checkbox" name="foods" value="${food.id}" /> <span>${food.name}</span>`;
-    foodNode.appendChild(label);
+    foodFragment.appendChild(label);
   });
+  foodNode.appendChild(foodFragment);
 
   const requiredFields = [
     'role',
@@ -59,6 +83,66 @@
     'dietDiversity',
     'waterSource'
   ];
+
+  function normalizeText(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  function resolveLanguage(value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+
+    const exact = NutriData.languages.find((language) => language.toLowerCase() === text.toLowerCase());
+    if (exact) return exact;
+
+    const close = NutriData.languages.find((language) => language.toLowerCase().includes(text.toLowerCase()));
+    return close || text;
+  }
+
+  function resolveCommunity(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return { key: '', label: '' };
+
+    const withoutCountry = raw.split(',')[0].trim();
+    const exact = communityNames.find((name) => name.toLowerCase() === raw.toLowerCase() || name.toLowerCase() === withoutCountry.toLowerCase());
+    if (exact) {
+      return { key: exact, label: `${exact}, ${NutriData.communities[exact].country}` };
+    }
+
+    const normalizedInput = normalizeText(raw);
+    const scored = communityNames
+      .map((name) => {
+        const country = NutriData.communities[name].country;
+        const searchable = normalizeText(`${name} ${country}`);
+        let score = 0;
+        if (searchable.startsWith(normalizedInput)) score += 6;
+        if (searchable.includes(normalizedInput)) score += 3;
+        if (normalizedInput && normalizedInput.includes(normalizeText(name))) score += 2;
+        return { name, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    if (scored.length && scored[0].score > 0) {
+      const best = scored[0].name;
+      return { key: best, label: `${best}, ${NutriData.communities[best].country}` };
+    }
+
+    return { key: raw, label: raw };
+  }
+
+  function filterFoods(term) {
+    const normalized = normalizeText(term);
+    const items = foodNode.querySelectorAll('.checkbox-item');
+    items.forEach((item) => {
+      const name = item.dataset.foodName || '';
+      const visible = !normalized || name.includes(normalized);
+      item.classList.toggle('hide', !visible);
+    });
+  }
 
   function updateProgress() {
     const total = requiredFields.length + 2;
@@ -79,6 +163,14 @@
   }
 
   form.addEventListener('input', updateProgress);
+  form.addEventListener('change', updateProgress);
+
+  if (foodSearchNode) {
+    foodSearchNode.addEventListener('input', () => {
+      filterFoods(foodSearchNode.value);
+    });
+  }
+
   updateProgress();
 
   function getSelected(name) {
@@ -86,9 +178,7 @@
   }
 
   function buildMealPlan(selectedFoods, deficiencies, weeklyBudget, householdSize) {
-    const foods = selectedFoods.length
-      ? selectedFoods
-      : NutriData.foods.filter((food) => food.cost <= 1.4).slice(0, 8);
+    const foods = selectedFoods.length ? selectedFoods : NutriData.foods.filter((food) => food.cost <= 1.5).slice(0, 10);
 
     const carbFoods = foods.filter((f) => f.nutrients.includes('carbs'));
     const proteinFoods = foods.filter((f) => f.nutrients.includes('protein'));
@@ -99,14 +189,14 @@
     const mustTarget = deficiencies.map((d) => d.name.toLowerCase());
     const highPriorityFoods = foods
       .map((food) => {
-        const matches = food.nutrients.reduce((acc, n) => {
-          if (mustTarget.some((target) => target.includes(n.replace('vitamin', 'vitamin ')))) return acc + 1;
-          if (mustTarget.includes('iron') && n === 'iron') return acc + 1;
-          if (mustTarget.includes('protein') && n === 'protein') return acc + 1;
-          if (mustTarget.includes('vitamin a') && n === 'vitaminA') return acc + 1;
+        const matches = food.nutrients.reduce((acc, nutrient) => {
+          if (mustTarget.includes('iron') && nutrient === 'iron') return acc + 1;
+          if (mustTarget.includes('protein') && nutrient === 'protein') return acc + 1;
+          if (mustTarget.includes('vitamin a') && nutrient === 'vitaminA') return acc + 1;
+          if (mustTarget.includes('zinc') && nutrient === 'zinc') return acc + 1;
           return acc;
         }, 0);
-        return { food, matches, rank: food.score + matches * 7 };
+        return { food, rank: food.score + matches * 8 };
       })
       .sort((a, b) => b.rank - a.rank)
       .map((entry) => entry.food);
@@ -125,7 +215,7 @@
         (safeCarbs[idx % safeCarbs.length].cost +
           safeProteins[(idx + 1) % safeProteins.length].cost +
           safeProtective[(idx + 2) % safeProtective.length].cost) *
-        Math.min(1.2, 0.55 + householdSize * 0.12);
+        Math.min(1.22, 0.55 + householdSize * 0.12);
 
       return {
         day,
@@ -255,8 +345,8 @@
     return { risk, category, actions };
   }
 
-  function nearestResources(communityName, topN) {
-    const point = NutriData.communities[communityName];
+  function nearestResources(communityKey, topN) {
+    const point = NutriData.communities[communityKey];
     if (!point) return NutriData.resources.slice(0, topN);
 
     return NutriData.resources
@@ -281,11 +371,14 @@
       return;
     }
 
+    const matchedCommunity = resolveCommunity(form.community.value);
+
     const payload = {
       role: form.role.value,
-      language: form.language.value,
+      language: resolveLanguage(form.language.value),
       householdName: form.householdName.value.trim(),
-      community: form.community.value,
+      community: matchedCommunity.label,
+      communityKey: matchedCommunity.key,
       ageMonths: Number(form.ageMonths.value),
       sex: form.sex.value,
       householdSize: Number(form.householdSize.value),
@@ -311,7 +404,7 @@
     const deficiencies = inferDeficiencies(selectedSymptoms, selectedFoods);
     const riskOutput = computeRisk(payload, selectedSymptoms, selectedFoods);
     const mealPlan = buildMealPlan(selectedFoods, deficiencies, payload.weeklyBudget, payload.householdSize);
-    const resources = nearestResources(payload.community, 3);
+    const resources = nearestResources(payload.communityKey, 3);
 
     const report = {
       id: `rep-${Date.now()}`,
