@@ -23,7 +23,7 @@
   });
 
   const map = L.map('resource-map').setView([18, 10], 2);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
   }).addTo(map);

@@ -30,8 +30,19 @@
 
       <section class="card section" style="max-width: 720px;">
         <div class="field">
-          <label for="ui-language" data-i18n="settings_language_label">Display language</label>
-          <select id="ui-language"></select>
+          <label for="ui-language-input" data-i18n="settings_language_label">Display language</label>
+          <input
+            id="ui-language-input"
+            list="ui-language-options"
+            data-i18n-placeholder="settings_language_search_placeholder"
+            placeholder="Type language name or code (for example: English, Hindi, ar)"
+            autocomplete="off"
+          />
+          <datalist id="ui-language-options"></datalist>
+        </div>
+        <div class="field" style="margin-top: 0.6rem;">
+          <p class="small-text" data-i18n="settings_language_search_label" style="margin: 0 0 0.5rem 0;">Search language</p>
+          <button id="apply-language-btn" class="btn btn-primary" type="button" data-i18n="settings_language_apply">Apply language</button>
         </div>
         <p class="small-text" data-i18n="settings_note" style="margin-top: 0.7rem;">
           Tip: assessment "Preferred language" is for report context; this setting controls app UI text.
