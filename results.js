@@ -1,4 +1,5 @@
 (function () {
+  const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
   const report = NutriApp.getCurrentReport();
   const emptyState = document.getElementById('empty-state');
   const content = document.getElementById('results-content');
@@ -24,22 +25,26 @@
   ring.style.setProperty('--ring-color', categoryColors[category] || '#17a398');
 
   document.getElementById('risk-score').textContent = String(riskScore);
-  document.getElementById('risk-category').textContent = `${category} Risk`;
+  document.getElementById('risk-category').textContent = `${category} ${t('results_risk_suffix')}`;
 
   const riskAlert = document.getElementById('risk-alert');
   riskAlert.textContent =
     category === 'Urgent'
-      ? 'Critical risk detected. Immediate referral and close follow-up are required.'
+      ? t('risk_urgent_alert')
       : category === 'High'
-        ? 'Elevated risk. Start nutrition interventions now and schedule clinic review this week.'
+        ? t('risk_high_alert')
         : category === 'Moderate'
-          ? 'Moderate risk. Strengthen diet diversity and monitor growth in 2 weeks.'
-          : 'Low immediate risk. Continue preventive nutrition and monthly monitoring.';
+          ? t('risk_moderate_alert')
+          : t('risk_low_alert');
 
   riskAlert.className = `alert ${category === 'Urgent' ? 'alert-danger' : category === 'Low' ? 'alert-success' : 'alert-warn'}`;
 
   const summary = document.getElementById('result-summary');
-  summary.textContent = `Screened household ${report.payload.householdName} on ${NutriApp.formatDate(report.createdAt)} in ${report.payload.community}.`;
+  summary.textContent = t('results_summary', {
+    household: report.payload.householdName,
+    date: NutriApp.formatDate(report.createdAt),
+    community: report.payload.community
+  });
 
   const actionsList = document.getElementById('actions-list');
   report.riskOutput.actions.forEach((action) => {
@@ -48,7 +53,7 @@
     actionsList.appendChild(li);
   });
 
-  document.getElementById('follow-up-text').textContent = `Next follow-up recommended in ${report.followUpDue} day(s).`;
+  document.getElementById('follow-up-text').textContent = t('results_followup', { days: report.followUpDue });
 
   const deficiencyBody = document.querySelector('#deficiency-table tbody');
   report.deficiencies.forEach((item) => {
@@ -86,13 +91,13 @@
   const budgetAlert = document.getElementById('budget-alert');
   if (report.mealPlan.budgetRisk === 'high') {
     budgetAlert.className = 'alert alert-danger';
-    budgetAlert.textContent = 'Budget pressure is high. Prioritize beans/lentils/millet and request food support from nearby NGOs.';
+    budgetAlert.textContent = t('budget_high');
   } else if (report.mealPlan.budgetRisk === 'moderate') {
     budgetAlert.className = 'alert alert-warn';
-    budgetAlert.textContent = 'Budget is moderate. Use substitutions with fortified flour, leafy greens, and legumes.';
+    budgetAlert.textContent = t('budget_moderate');
   } else {
     budgetAlert.className = 'alert alert-success';
-    budgetAlert.textContent = 'Budget level can support the current meal plan while improving nutrient quality.';
+    budgetAlert.textContent = t('budget_low');
   }
 
   document.getElementById('speak-btn').addEventListener('click', () => {

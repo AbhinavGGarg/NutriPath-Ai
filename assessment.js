@@ -1,6 +1,7 @@
 (function () {
   const form = document.getElementById('assessment-form');
   if (!form) return;
+  const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
 
   const symptoms = [
     { id: 'fatigue', label: 'Fatigue / low energy', weight: 6, nutrients: ['iron', 'protein'] },
@@ -362,7 +363,7 @@
     const selectedFoodIds = getSelected('foods');
 
     if (selectedFoodIds.length < 3) {
-      validationNode.textContent = 'Select at least 3 available foods so the AI meal planner can generate realistic recommendations.';
+      validationNode.textContent = t('validation_food_min');
       validationNode.classList.remove('hide');
       return;
     }
@@ -390,7 +391,7 @@
 
     for (const field of requiredFields) {
       if (!String(payload[field] ?? '').trim()) {
-        validationNode.textContent = 'Please complete all required fields before running the AI assessment.';
+        validationNode.textContent = t('validation_required');
         validationNode.classList.remove('hide');
         return;
       }

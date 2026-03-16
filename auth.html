@@ -24,13 +24,13 @@
 
     <main class="container">
       <section class="page-header">
-        <h1 class="page-title">Account Access</h1>
-        <p class="page-desc">Create an account or log in to save your reports across visits. Guest mode data resets when the browser session ends.</p>
+        <h1 class="page-title" data-i18n="btn_account">Account</h1>
+        <p class="page-desc" data-i18n="guest_mode_banner">Guest mode is temporary. Sign in to save your reports across visits.</p>
       </section>
 
       <section class="section auth-shell">
         <article class="card">
-          <h3>Log In</h3>
+          <h3 data-i18n="btn_login">Log in</h3>
           <form id="login-form">
             <div class="field">
               <label for="login-email">Email</label>
@@ -41,14 +41,14 @@
               <input id="login-password" type="password" required />
             </div>
             <div class="cta-row" style="margin-top: 0.9rem;">
-              <button class="btn btn-primary" type="submit">Log In</button>
+              <button class="btn btn-primary" type="submit" data-i18n="btn_login">Log in</button>
             </div>
             <p id="login-status" class="status-msg"></p>
           </form>
         </article>
 
         <article class="card">
-          <h3>Sign Up</h3>
+          <h3 data-i18n="btn_signup">Sign up</h3>
           <form id="signup-form">
             <div class="field">
               <label for="signup-name">Full name</label>
@@ -67,7 +67,7 @@
               <input id="signup-confirm" type="password" minlength="6" required />
             </div>
             <div class="cta-row" style="margin-top: 0.9rem;">
-              <button class="btn btn-secondary" type="submit">Create Account</button>
+              <button class="btn btn-secondary" type="submit" data-i18n="btn_signup">Sign up</button>
             </div>
             <p id="signup-status" class="status-msg"></p>
           </form>

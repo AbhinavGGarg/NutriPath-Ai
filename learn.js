@@ -1,4 +1,5 @@
 (function () {
+  const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
   const grid = document.getElementById('lesson-grid');
   if (!grid) return;
 
@@ -33,10 +34,10 @@
     button.addEventListener('click', () => {
       const answer = button.getAttribute('data-answer');
       if (answer === 'myth') {
-        feedback.textContent = 'Correct. Affordable local foods like lentils, greens, eggs, and fortified flour can improve nutrition significantly.';
+        feedback.textContent = t('learn_quiz_correct');
         feedback.style.color = '#11825f';
       } else {
-        feedback.textContent = 'Not quite. Many low-cost local foods can be highly nutritious when combined well.';
+        feedback.textContent = t('learn_quiz_wrong');
         feedback.style.color = '#e63946';
       }
     });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nutripath-v4';
+const CACHE_NAME = 'nutripath-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,9 +8,11 @@ const APP_SHELL = [
   './dashboard.html',
   './learn.html',
   './auth.html',
+  './settings.html',
   './styles.css',
   './app.js',
-  './auth.js'
+  './auth.js',
+  './settings.js'
 ];
 
 self.addEventListener('install', (event) => {

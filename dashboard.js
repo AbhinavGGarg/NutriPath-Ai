@@ -1,4 +1,5 @@
 (function () {
+  const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
   const metricTotal = document.getElementById('m-total');
   const metricCritical = document.getElementById('m-critical');
   const metricFollow = document.getElementById('m-follow');
@@ -99,7 +100,7 @@
     });
 
     if (!history.length) {
-      recentBody.innerHTML = '<tr><td colspan="4">No data yet. Run an assessment or load demo data.</td></tr>';
+      recentBody.innerHTML = `<tr><td colspan=\"4\">${t('dashboard_no_data')}</td></tr>`;
     }
 
     const queue = history
@@ -108,7 +109,7 @@
 
     actionQueue.innerHTML = '';
     if (!queue.length) {
-      actionQueue.innerHTML = '<div class="resource-item">No critical cases in queue.</div>';
+      actionQueue.innerHTML = `<div class=\"resource-item\">${t('dashboard_no_critical')}</div>`;
     } else {
       queue.forEach((entry) => {
         const node = document.createElement('div');

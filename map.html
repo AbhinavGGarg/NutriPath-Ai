@@ -25,39 +25,39 @@
 
     <main class="container">
       <section class="page-header">
-        <h1 class="page-title">Food and Health Resource Locator</h1>
-        <p class="page-desc">Find nearby clinics, NGO support, and food distribution points, then prioritize referrals based on risk level.</p>
+        <h1 class="page-title" data-i18n="map_title">Food and Health Resource Locator</h1>
+        <p class="page-desc" data-i18n="map_desc">Find nearby clinics, NGO support, and food distribution points, then prioritize referrals based on risk level.</p>
       </section>
 
       <section class="section map-shell">
         <aside class="card">
           <div class="field">
-            <label for="map-community">Community center</label>
-            <input id="map-community" list="map-community-options" placeholder="Select or search community" />
+            <label for="map-community" data-i18n="map_label_community">Community center</label>
+            <input id="map-community" list="map-community-options" placeholder="Select or search community" data-i18n-placeholder="placeholder_community_search" />
             <datalist id="map-community-options"></datalist>
-            <span class="field-hint">Type manually or choose from suggestions.</span>
+            <span class="field-hint" data-i18n="map_hint_community">Type manually or choose from suggestions.</span>
           </div>
           <div class="field">
-            <label for="resource-type">Resource type</label>
+            <label for="resource-type" data-i18n="map_label_type">Resource type</label>
             <select id="resource-type">
-              <option value="All">All</option>
-              <option value="Clinic">Clinic</option>
-              <option value="Food Support">Food Support</option>
+              <option value="All" data-i18n="map_option_all">All</option>
+              <option value="Clinic" data-i18n="map_option_clinic">Clinic</option>
+              <option value="Food Support" data-i18n="map_option_food">Food Support</option>
               <option value="NGO">NGO</option>
             </select>
           </div>
           <div class="field">
-            <label for="max-distance">Max distance (km)</label>
+            <label for="max-distance" data-i18n="map_label_distance">Max distance (km)</label>
             <input id="max-distance" type="range" min="3" max="40" value="20" />
             <small id="distance-label" class="small-text">20 km</small>
           </div>
           <div class="cta-row" style="margin-top: 0.4rem;">
-            <button id="locate-btn" class="btn btn-secondary" type="button">Use my location</button>
-            <button id="apply-map-filter" class="btn btn-primary" type="button">Apply filters</button>
+            <button id="locate-btn" class="btn btn-secondary" type="button" data-i18n="btn_use_location">Use my location</button>
+            <button id="apply-map-filter" class="btn btn-primary" type="button" data-i18n="btn_apply_filters">Apply filters</button>
           </div>
           <p id="map-status" class="small-text" style="margin: 0.65rem 0 0;"></p>
           <hr style="border: 0; border-top: 1px solid rgba(11, 60, 93, 0.1); margin: 1rem 0;" />
-          <h3>Nearby resources</h3>
+          <h3 data-i18n="map_nearby_resources">Nearby resources</h3>
           <div id="resource-list" class="resource-list"></div>
         </aside>
 

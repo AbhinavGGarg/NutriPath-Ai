@@ -2,6 +2,7 @@
   const loginForm = document.getElementById('login-form');
   const signupForm = document.getElementById('signup-form');
   if (!loginForm || !signupForm || !window.NutriApp) return;
+  const t = (key, vars) => NutriApp.t(key, vars);
 
   const loginStatus = document.getElementById('login-status');
   const signupStatus = document.getElementById('signup-status');
@@ -13,7 +14,7 @@
 
   const activeUser = NutriApp.getCurrentUser();
   if (activeUser) {
-    setStatus(loginStatus, `You are currently logged in as ${activeUser.name || activeUser.email}.`, true);
+    setStatus(loginStatus, `${t('label_signed_in')}: ${activeUser.name || activeUser.email}.`, true);
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -36,7 +37,7 @@
       return;
     }
 
-    setStatus(loginStatus, 'Login successful. Redirecting...', true);
+    setStatus(loginStatus, t('auth_login_success'), true);
 
     const next = params.get('next') || './assessment.html';
     setTimeout(() => {
@@ -53,7 +54,7 @@
     const confirm = document.getElementById('signup-confirm').value;
 
     if (password !== confirm) {
-      setStatus(signupStatus, 'Passwords do not match.', false);
+      setStatus(signupStatus, t('auth_password_mismatch'), false);
       return;
     }
 
@@ -63,9 +64,16 @@
       return;
     }
 
-    setStatus(signupStatus, 'Account created. Please log in to start saving reports.', true);
+    setStatus(signupStatus, t('auth_signup_success'), true);
     signupForm.reset();
     document.getElementById('login-email').value = result.account.email;
     document.getElementById('login-email').focus();
+  });
+
+  window.addEventListener('nutri:lang-changed', () => {
+    const user = NutriApp.getCurrentUser();
+    if (user) {
+      setStatus(loginStatus, `${t('label_signed_in')}: ${user.name || user.email}.`, true);
+    }
   });
 })();

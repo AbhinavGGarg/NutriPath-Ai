@@ -23,9 +23,9 @@
   });
 
   const map = L.map('resource-map').setView([18, 10], 2);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
   }).addTo(map);
   map.attributionControl.setPrefix('');
 
@@ -41,6 +41,10 @@
     'Food Support': { color: '#f4b942', fillColor: '#ffd27a' },
     NGO: { color: '#0b3c5d', fillColor: '#4f8ab0' }
   };
+
+  function t(key, vars) {
+    return window.NutriApp?.t ? window.NutriApp.t(key, vars) : key;
+  }
 
   function normalizeText(value) {
     return String(value || '')
@@ -140,7 +144,12 @@
     list.forEach((item) => {
       if (counts[item.type] !== undefined) counts[item.type] += 1;
     });
-    return `Clinics: ${counts.Clinic} · Food support: ${counts['Food Support']} · NGO: ${counts.NGO}`;
+
+    return t('map_summary', {
+      clinic: counts.Clinic,
+      food: counts['Food Support'],
+      ngo: counts.NGO
+    });
   }
 
   function applyFilters() {
@@ -151,7 +160,7 @@
     markerLayer.clearLayers();
     resourceList.innerHTML = '';
 
-    if (!(usingCurrentLocation && rawCommunity === 'Current location' && mapCenter)) {
+    if (!(usingCurrentLocation && rawCommunity === t('current_location') && mapCenter)) {
       const inputMatch = resolveCommunityInput(communityInput.value);
       if (inputMatch) {
         usingCurrentLocation = false;
@@ -163,7 +172,7 @@
         mapCenter = null;
         centerLabel = '';
         map.setView([18, 10], 2);
-        renderStatus('Community not recognized. Showing results globally by selected type.');
+        renderStatus(t('map_status_unrecognized'));
       } else {
         mapCenter = null;
         centerLabel = '';
@@ -186,11 +195,11 @@
 
     if (filtered.length === 0) {
       const noDataMessage = mapCenter
-        ? 'No services found for this filter and distance. Increase range or choose another type.'
-        : 'No services found for this resource type.';
+        ? t('map_no_data_local')
+        : t('map_no_data_global');
       resourceList.innerHTML = `<div class="resource-item">${noDataMessage}</div>`;
       if (!String(communityInput.value || '').trim()) {
-        renderStatus('Select or type a community, then click Apply filters to use distance-based matching.');
+        renderStatus(t('map_status_select'));
       }
       return;
     }
@@ -206,7 +215,9 @@
         fillColor: style.fillColor,
         fillOpacity: 0.85
       }).addTo(markerLayer);
-      const distanceText = mapCenter ? `${resource.distance.toFixed(1)} km away` : 'Distance available after selecting a community';
+      const distanceText = mapCenter
+        ? t('map_distance_away', { distance: resource.distance.toFixed(1) })
+        : t('map_distance_pending');
 
       marker.bindPopup(`<strong>${resource.name}</strong><br/>${resource.type}<br/>${distanceText}<br/>${resource.open}`);
 
@@ -226,9 +237,21 @@
     });
 
     if (mapCenter) {
-      renderStatus(`Applied: ${filtered.length} resource(s) within ${maxDistance} km of ${centerLabel}. ${buildSummaryByType(filtered)}`);
+      renderStatus(
+        t('map_status_applied_local', {
+          count: filtered.length,
+          distance: maxDistance,
+          center: centerLabel,
+          summary: buildSummaryByType(filtered)
+        })
+      );
     } else {
-      renderStatus(`Applied: ${filtered.length} resource(s) globally. ${buildSummaryByType(filtered)}. Select a community to enable distance filtering.`);
+      renderStatus(
+        t('map_status_applied_global', {
+          count: filtered.length,
+          summary: buildSummaryByType(filtered)
+        })
+      );
     }
   }
 
@@ -246,7 +269,7 @@
   });
 
   communityInput.addEventListener('input', () => {
-    if (communityInput.value !== 'Current location') {
+    if (communityInput.value !== t('current_location')) {
       usingCurrentLocation = false;
     }
   });
@@ -261,17 +284,25 @@
           lng: position.coords.longitude
         };
         usingCurrentLocation = true;
-        centerLabel = 'Current location';
-        communityInput.value = 'Current location';
+        centerLabel = t('current_location');
+        communityInput.value = t('current_location');
         map.setView([mapCenter.lat, mapCenter.lng], 12);
         applyFilters();
       },
       () => {
-        alert('Location permission denied. Please type a community manually instead.');
+        alert(t('map_location_denied'));
       }
     );
   });
 
   renderHotspots();
   applyFilters();
+
+  window.addEventListener('nutri:lang-changed', () => {
+    if (usingCurrentLocation) {
+      centerLabel = t('current_location');
+      communityInput.value = t('current_location');
+    }
+    applyFilters();
+  });
 })();
