@@ -7,7 +7,6 @@
   const metricAvg = document.getElementById('m-avg');
   const recentBody = document.querySelector('#recent-table tbody');
   const actionQueue = document.getElementById('action-queue');
-  const seedButton = document.getElementById('seed-demo');
 
   let riskChart;
   let hotspotChart;
@@ -69,7 +68,16 @@
   }
 
   function renderDashboard() {
-    const history = NutriApp.getHistory();
+    const rawHistory = NutriApp.getHistory();
+    const history = rawHistory.filter((entry) => !String(entry?.id || '').startsWith('demo-'));
+
+    if (history.length !== rawHistory.length) {
+      NutriApp.setHistory(history);
+      const current = NutriApp.getCurrentReport();
+      if (String(current?.id || '').startsWith('demo-')) {
+        NutriApp.setCurrentReport(history[0] || null);
+      }
+    }
 
     metricTotal.textContent = String(history.length);
     const critical = history.filter((entry) => ['High', 'Urgent'].includes(entry?.riskOutput?.category)).length;
@@ -104,7 +112,10 @@
     });
 
     if (!history.length) {
-      recentBody.innerHTML = `<tr><td colspan=\"4\">${t('dashboard_no_data')}</td></tr>`;
+      const noDataText = String(t('dashboard_no_data') || '')
+        .replace(/\s*or load demo data\.?/i, '')
+        .trim();
+      recentBody.innerHTML = `<tr><td colspan="4">${noDataText || t('dashboard_no_data')}</td></tr>`;
     }
 
     const queue = history
@@ -130,48 +141,5 @@
 
     buildCharts(history);
   }
-
-  function seedDemoData() {
-    const communities = Object.keys(NutriData.communities);
-    const categories = ['Low', 'Moderate', 'High', 'Urgent'];
-    const defA = [{ name: 'iron', score: 5, confidence: 70 }];
-
-    const demo = Array.from({ length: 32 }).map((_, idx) => {
-      const category = categories[Math.floor(Math.random() * categories.length)];
-      const scoreByCategory = {
-        Low: 24 + Math.round(Math.random() * 10),
-        Moderate: 40 + Math.round(Math.random() * 10),
-        High: 58 + Math.round(Math.random() * 12),
-        Urgent: 78 + Math.round(Math.random() * 15)
-      };
-
-      const dayOffset = Math.floor(Math.random() * 35);
-      const createdAt = new Date(Date.now() - dayOffset * 86400000).toISOString();
-
-      return {
-        id: `demo-${idx}`,
-        createdAt,
-        payload: {
-          householdName: `Demo HH-${110 + idx}`,
-          community: communities[Math.floor(Math.random() * communities.length)]
-        },
-        riskOutput: {
-          category,
-          risk: scoreByCategory[category],
-          actions: [t('dashboard_demo_action_1'), t('dashboard_demo_action_2')]
-        },
-        deficiencies: defA,
-        mealPlan: { days: [], budgetRisk: 'moderate' },
-        resources: [],
-        followUpDue: category === 'Urgent' ? 2 : category === 'High' ? 7 : 14
-      };
-    });
-
-    NutriApp.setHistory(demo);
-    NutriApp.setCurrentReport(demo[0]);
-    renderDashboard();
-  }
-
-  seedButton.addEventListener('click', seedDemoData);
   renderDashboard();
 })();
