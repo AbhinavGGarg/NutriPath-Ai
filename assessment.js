@@ -36,10 +36,6 @@
     communityListNode.appendChild(option);
   });
 
-  if (communityLabels.length) {
-    communityNode.value = communityLabels[0];
-  }
-
   NutriData.languages
     .slice()
     .sort((a, b) => a.localeCompare(b))

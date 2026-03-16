@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b3c5d" />
+    <title>NutriPath AI | Login & Sign Up</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="auth">
+    <header class="topbar">
+      <div class="container nav">
+        <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath AI</span></a>
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a class="nav-link" data-nav="home" href="./index.html">Home</a>
+          <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
+          <a class="nav-link" data-nav="results" href="./results.html">Results</a>
+          <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
+          <a class="nav-link" data-nav="dashboard" href="./dashboard.html">Program Dashboard</a>
+          <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="page-header">
+        <h1 class="page-title">Account Access</h1>
+        <p class="page-desc">Create an account or log in to save your reports across visits. Guest mode data resets when the browser session ends.</p>
+      </section>
+
+      <section class="section auth-shell">
+        <article class="card">
+          <h3>Log In</h3>
+          <form id="login-form">
+            <div class="field">
+              <label for="login-email">Email</label>
+              <input id="login-email" type="email" required />
+            </div>
+            <div class="field">
+              <label for="login-password">Password</label>
+              <input id="login-password" type="password" required />
+            </div>
+            <div class="cta-row" style="margin-top: 0.9rem;">
+              <button class="btn btn-primary" type="submit">Log In</button>
+            </div>
+            <p id="login-status" class="status-msg"></p>
+          </form>
+        </article>
+
+        <article class="card">
+          <h3>Sign Up</h3>
+          <form id="signup-form">
+            <div class="field">
+              <label for="signup-name">Full name</label>
+              <input id="signup-name" required />
+            </div>
+            <div class="field">
+              <label for="signup-email">Email</label>
+              <input id="signup-email" type="email" required />
+            </div>
+            <div class="field">
+              <label for="signup-password">Password</label>
+              <input id="signup-password" type="password" minlength="6" required />
+            </div>
+            <div class="field">
+              <label for="signup-confirm">Confirm password</label>
+              <input id="signup-confirm" type="password" minlength="6" required />
+            </div>
+            <div class="cta-row" style="margin-top: 0.9rem;">
+              <button class="btn btn-secondary" type="submit">Create Account</button>
+            </div>
+            <p id="signup-status" class="status-msg"></p>
+          </form>
+        </article>
+      </section>
+    </main>
+
+    <footer class="container footer">NutriPath AI for Fuel the Future Hackathon · <span id="year"></span></footer>
+
+    <script src="./app.js"></script>
+    <script src="./auth.js"></script>
+  </body>
+</html>

@@ -161,8 +161,8 @@
       };
     });
 
-    localStorage.setItem('nutriHistory', JSON.stringify(demo));
-    localStorage.setItem('nutriCurrentReport', JSON.stringify(demo[0]));
+    NutriApp.setHistory(demo);
+    NutriApp.setCurrentReport(demo[0]);
     renderDashboard();
   }
 

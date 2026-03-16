@@ -47,6 +47,105 @@
     });
   }
 
+  const STORAGE_KEYS = {
+    accounts: 'nutriAccountsV1',
+    sessionUserId: 'nutriSessionUserIdV1',
+    guestHistory: 'nutriGuestHistoryV1',
+    guestCurrent: 'nutriGuestCurrentV1'
+  };
+
+  function parseJSON(raw, fallback) {
+    try {
+      return JSON.parse(raw || '');
+    } catch {
+      return fallback;
+    }
+  }
+
+  function getAccounts() {
+    return parseJSON(localStorage.getItem(STORAGE_KEYS.accounts), []);
+  }
+
+  function saveAccounts(accounts) {
+    localStorage.setItem(STORAGE_KEYS.accounts, JSON.stringify(accounts));
+  }
+
+  function currentUserId() {
+    return sessionStorage.getItem(STORAGE_KEYS.sessionUserId);
+  }
+
+  function currentUser() {
+    const userId = currentUserId();
+    if (!userId) return null;
+    return getAccounts().find((account) => account.id === userId) || null;
+  }
+
+  function reportsKey(base, user) {
+    if (!user) return base;
+    return `${base}:${user.id}`;
+  }
+
+  function getReportStorage() {
+    const user = currentUser();
+    const storage = user ? localStorage : sessionStorage;
+    const historyKey = reportsKey(STORAGE_KEYS.guestHistory, user);
+    const currentKey = reportsKey(STORAGE_KEYS.guestCurrent, user);
+    return { user, storage, historyKey, currentKey };
+  }
+
+  function createAuthButtons() {
+    const nav = document.querySelector('.nav');
+    if (!nav) return;
+
+    const existing = document.getElementById('auth-controls');
+    if (existing) existing.remove();
+
+    const controls = document.createElement('div');
+    controls.id = 'auth-controls';
+    controls.className = 'auth-controls';
+
+    const user = currentUser();
+
+    if (user) {
+      const userTag = document.createElement('span');
+      userTag.className = 'auth-user';
+      userTag.textContent = `Signed in: ${user.name || user.email}`;
+
+      const accountLink = document.createElement('a');
+      accountLink.className = 'btn btn-secondary btn-small';
+      accountLink.href = './auth.html';
+      accountLink.textContent = 'Account';
+
+      const logoutButton = document.createElement('button');
+      logoutButton.type = 'button';
+      logoutButton.className = 'btn btn-secondary btn-small';
+      logoutButton.textContent = 'Log out';
+      logoutButton.addEventListener('click', () => {
+        NutriApp.logout();
+        window.location.reload();
+      });
+
+      controls.appendChild(userTag);
+      controls.appendChild(accountLink);
+      controls.appendChild(logoutButton);
+    } else {
+      const loginLink = document.createElement('a');
+      loginLink.className = 'btn btn-secondary btn-small';
+      loginLink.href = './auth.html?mode=login';
+      loginLink.textContent = 'Log in';
+
+      const signUpLink = document.createElement('a');
+      signUpLink.className = 'btn btn-primary btn-small';
+      signUpLink.href = './auth.html?mode=signup';
+      signUpLink.textContent = 'Sign up';
+
+      controls.appendChild(loginLink);
+      controls.appendChild(signUpLink);
+    }
+
+    nav.appendChild(controls);
+  }
+
   window.NutriApp = {
     formatDate(value) {
       return new Date(value).toLocaleDateString(undefined, {
@@ -56,27 +155,104 @@
       });
     },
 
-    getHistory() {
-      try {
-        return JSON.parse(localStorage.getItem('nutriHistory') || '[]');
-      } catch {
-        return [];
+    getCurrentUser() {
+      return currentUser();
+    },
+
+    isAuthenticated() {
+      return Boolean(currentUser());
+    },
+
+    getStorageMode() {
+      return currentUser() ? 'account' : 'guest';
+    },
+
+    createAccount({ name, email, password }) {
+      const cleanName = String(name || '').trim();
+      const cleanEmail = String(email || '').trim().toLowerCase();
+      const cleanPassword = String(password || '');
+
+      if (!cleanName || !cleanEmail || !cleanPassword) {
+        return { ok: false, error: 'Please complete all sign-up fields.' };
       }
+
+      if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+        return { ok: false, error: 'Please enter a valid email address.' };
+      }
+
+      if (cleanPassword.length < 6) {
+        return { ok: false, error: 'Password must be at least 6 characters.' };
+      }
+
+      const accounts = getAccounts();
+      if (accounts.some((account) => account.email === cleanEmail)) {
+        return { ok: false, error: 'An account with this email already exists.' };
+      }
+
+      const newAccount = {
+        id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        name: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        createdAt: new Date().toISOString()
+      };
+
+      accounts.push(newAccount);
+      saveAccounts(accounts);
+
+      return { ok: true, account: { id: newAccount.id, name: newAccount.name, email: newAccount.email } };
+    },
+
+    login(email, password) {
+      const cleanEmail = String(email || '').trim().toLowerCase();
+      const cleanPassword = String(password || '');
+      const account = getAccounts().find((item) => item.email === cleanEmail && item.password === cleanPassword);
+
+      if (!account) {
+        return { ok: false, error: 'Invalid email or password.' };
+      }
+
+      sessionStorage.setItem(STORAGE_KEYS.sessionUserId, account.id);
+      createAuthButtons();
+      return { ok: true, user: { id: account.id, name: account.name, email: account.email } };
+    },
+
+    logout() {
+      sessionStorage.removeItem(STORAGE_KEYS.sessionUserId);
+      createAuthButtons();
+    },
+
+    getHistory() {
+      const { storage, historyKey } = getReportStorage();
+      return parseJSON(storage.getItem(historyKey), []);
+    },
+
+    setHistory(history) {
+      const { storage, historyKey } = getReportStorage();
+      storage.setItem(historyKey, JSON.stringify(history.slice(0, 250)));
     },
 
     saveReport(report) {
-      localStorage.setItem('nutriCurrentReport', JSON.stringify(report));
-      const history = this.getHistory();
+      const { storage, historyKey, currentKey } = getReportStorage();
+      storage.setItem(currentKey, JSON.stringify(report));
+      const history = parseJSON(storage.getItem(historyKey), []);
       history.unshift(report);
-      localStorage.setItem('nutriHistory', JSON.stringify(history.slice(0, 250)));
+      storage.setItem(historyKey, JSON.stringify(history.slice(0, 250)));
     },
 
     getCurrentReport() {
-      try {
-        return JSON.parse(localStorage.getItem('nutriCurrentReport') || 'null');
-      } catch {
-        return null;
-      }
+      const { storage, currentKey } = getReportStorage();
+      return parseJSON(storage.getItem(currentKey), null);
+    },
+
+    setCurrentReport(report) {
+      const { storage, currentKey } = getReportStorage();
+      storage.setItem(currentKey, JSON.stringify(report));
+    },
+
+    clearGuestData() {
+      sessionStorage.removeItem(STORAGE_KEYS.guestHistory);
+      sessionStorage.removeItem(STORAGE_KEYS.guestCurrent);
     },
 
     speak(text) {
@@ -100,4 +276,6 @@
       return R * c;
     }
   };
+
+  createAuthButtons();
 })();

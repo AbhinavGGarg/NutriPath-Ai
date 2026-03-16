@@ -88,6 +88,23 @@ img {
   flex-wrap: wrap;
 }
 
+.auth-controls {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.auth-user {
+  border-radius: 999px;
+  background: rgba(11, 60, 93, 0.08);
+  border: 1px solid rgba(11, 60, 93, 0.08);
+  color: var(--primary);
+  font-weight: 700;
+  padding: 0.36rem 0.7rem;
+  font-size: 0.8rem;
+}
+
 .nav-link {
   padding: 0.5rem 0.78rem;
   border-radius: 999px;
@@ -151,6 +168,11 @@ img {
 
 .btn:hover {
   transform: translateY(-1px);
+}
+
+.btn-small {
+  padding: 0.55rem 0.78rem;
+  font-size: 0.82rem;
 }
 
 .btn-primary {
@@ -480,6 +502,25 @@ textarea:focus {
   font-size: 0.9rem;
 }
 
+.auth-shell {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.status-msg {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.status-ok {
+  color: var(--success);
+}
+
+.status-err {
+  color: var(--danger);
+}
+
 .hide {
   display: none !important;
 }
@@ -526,5 +567,13 @@ textarea:focus {
     overflow-x: auto;
     padding-bottom: 0.2rem;
     flex-wrap: nowrap;
+  }
+
+  .auth-controls {
+    width: 100%;
+  }
+
+  .auth-shell {
+    grid-template-columns: 1fr;
   }
 }
