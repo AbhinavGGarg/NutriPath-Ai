@@ -4,6 +4,24 @@
   const resourceTypeLabel = (type) => (window.NutriApp?.getResourceTypeLabel ? window.NutriApp.getResourceTypeLabel(type) : type);
   const nutrientLabel = (name) => (window.NutriApp?.getNutrientLabel ? window.NutriApp.getNutrientLabel(name) : name);
   const dayLabel = (day) => (window.NutriApp?.getDayLabel ? window.NutriApp.getDayLabel(day) : day);
+
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function localizeFoodText(text) {
+    if (!window.NutriData?.foods) return text;
+    let output = String(text || '');
+    const foodsByLength = NutriData.foods.slice().sort((a, b) => b.name.length - a.name.length);
+    foodsByLength.forEach((food) => {
+      const translated = t(`food_${food.id}`);
+      if (!translated || translated === `food_${food.id}`) return;
+      const pattern = new RegExp(`\\b${escapeRegExp(food.name)}\\b`, 'gi');
+      output = output.replace(pattern, translated);
+    });
+    return output;
+  }
+
   const report = NutriApp.getCurrentReport();
   const emptyState = document.getElementById('empty-state');
   const content = document.getElementById('results-content');
@@ -99,9 +117,9 @@
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${dayLabel(day.day)}</td>
-      <td>${day.breakfast}</td>
-      <td>${day.lunch}</td>
-      <td>${day.dinner}</td>
+      <td>${localizeFoodText(day.breakfast)}</td>
+      <td>${localizeFoodText(day.lunch)}</td>
+      <td>${localizeFoodText(day.dinner)}</td>
       <td>$${day.estimatedCost}</td>
     `;
     mealBody.appendChild(row);

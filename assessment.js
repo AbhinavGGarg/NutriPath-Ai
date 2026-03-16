@@ -46,23 +46,45 @@
       languageListNode.appendChild(option);
     });
 
-  symptoms.forEach((symptom) => {
-    const label = document.createElement('label');
-    label.className = 'checkbox-item';
-    label.innerHTML = `<input type="checkbox" name="symptoms" value="${symptom.id}" /> <span>${t(symptom.labelKey)}</span>`;
-    symptomNode.appendChild(label);
-  });
-
   const sortedFoods = NutriData.foods.slice().sort((a, b) => a.name.localeCompare(b.name));
-  const foodFragment = document.createDocumentFragment();
-  sortedFoods.forEach((food) => {
-    const label = document.createElement('label');
-    label.className = 'checkbox-item';
-    label.dataset.foodName = food.name.toLowerCase();
-    label.innerHTML = `<input type="checkbox" name="foods" value="${food.id}" /> <span>${food.name}</span>`;
-    foodFragment.appendChild(label);
-  });
-  foodNode.appendChild(foodFragment);
+
+  function getFoodLabel(food) {
+    const key = `food_${food.id}`;
+    const translated = t(key);
+    return translated === key ? food.name : translated;
+  }
+
+  function renderSymptoms() {
+    const checked = new Set(getSelected('symptoms'));
+    symptomNode.innerHTML = '';
+    symptoms.forEach((symptom) => {
+      const label = document.createElement('label');
+      label.className = 'checkbox-item';
+      const isChecked = checked.has(symptom.id) ? 'checked' : '';
+      label.innerHTML = `<input type="checkbox" name="symptoms" value="${symptom.id}" ${isChecked} /> <span>${t(symptom.labelKey)}</span>`;
+      symptomNode.appendChild(label);
+    });
+  }
+
+  function renderFoods() {
+    const checked = new Set(getSelected('foods'));
+    foodNode.innerHTML = '';
+    const foodFragment = document.createDocumentFragment();
+    sortedFoods.forEach((food) => {
+      const label = document.createElement('label');
+      label.className = 'checkbox-item';
+      const displayName = getFoodLabel(food);
+      label.dataset.foodName = `${displayName.toLowerCase()} ${food.name.toLowerCase()}`;
+      const isChecked = checked.has(food.id) ? 'checked' : '';
+      label.innerHTML = `<input type="checkbox" name="foods" value="${food.id}" ${isChecked} /> <span>${displayName}</span>`;
+      foodFragment.appendChild(label);
+    });
+    foodNode.appendChild(foodFragment);
+    filterFoods(foodSearchNode?.value || '');
+  }
+
+  renderSymptoms();
+  renderFoods();
 
   const requiredFields = [
     'role',
@@ -85,7 +107,7 @@
     return String(value || '')
       .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim();
   }
 
@@ -168,6 +190,12 @@
     });
   }
 
+  window.addEventListener('nutri:lang-changed', () => {
+    renderSymptoms();
+    renderFoods();
+    updateProgress();
+  });
+
   updateProgress();
 
   function getSelected(name) {
@@ -176,6 +204,7 @@
 
   function buildMealPlan(selectedFoods, deficiencies, weeklyBudget, householdSize) {
     const foods = selectedFoods.length ? selectedFoods : NutriData.foods.filter((food) => food.cost <= 1.5).slice(0, 10);
+    const foodName = (item) => getFoodLabel(item);
 
     const carbFoods = foods.filter((f) => f.nutrients.includes('carbs'));
     const proteinFoods = foods.filter((f) => f.nutrients.includes('protein'));
@@ -204,9 +233,9 @@
 
     const week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const plan = week.map((day, idx) => {
-      const breakfast = `${safeCarbs[idx % safeCarbs.length].name} porridge + ${safeProteins[(idx + 1) % safeProteins.length].name}`;
-      const lunch = `${safeCarbs[(idx + 2) % safeCarbs.length].name} + ${safeProteins[idx % safeProteins.length].name} + ${safeProtective[idx % safeProtective.length].name}`;
-      const dinner = `${safeProteins[(idx + 3) % safeProteins.length].name} stew + ${safeCarbs[(idx + 1) % safeCarbs.length].name} + ${safeProtective[(idx + 2) % safeProtective.length].name}`;
+      const breakfast = `${foodName(safeCarbs[idx % safeCarbs.length])} + ${foodName(safeProteins[(idx + 1) % safeProteins.length])}`;
+      const lunch = `${foodName(safeCarbs[(idx + 2) % safeCarbs.length])} + ${foodName(safeProteins[idx % safeProteins.length])} + ${foodName(safeProtective[idx % safeProtective.length])}`;
+      const dinner = `${foodName(safeProteins[(idx + 3) % safeProteins.length])} + ${foodName(safeCarbs[(idx + 1) % safeCarbs.length])} + ${foodName(safeProtective[(idx + 2) % safeProtective.length])}`;
 
       const dailyCost =
         (safeCarbs[idx % safeCarbs.length].cost +

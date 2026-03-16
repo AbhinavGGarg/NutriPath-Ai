@@ -10,11 +10,6 @@
     status.className = `status-msg ${ok ? 'status-ok' : 'status-err'}`;
   }
 
-  function getLangDisplay(lang) {
-    if (!lang) return '';
-    return `${lang.label} / ${lang.native} (${lang.code})`;
-  }
-
   function getLanguages() {
     return NutriApp.getAvailableUiLanguages().slice().sort((a, b) => a.label.localeCompare(b.label));
   }
@@ -26,14 +21,14 @@
 
     languages.forEach((lang) => {
       const option = document.createElement('option');
-      option.value = getLangDisplay(lang);
+      option.value = lang.label;
       optionsNode.appendChild(option);
     });
 
     const current = languages.find((lang) => lang.code === currentCode);
     if (current) {
-      input.value = getLangDisplay(current);
-      setStatus(NutriApp.t('settings_current_language', { language: getLangDisplay(current) }), true);
+      input.value = current.label;
+      setStatus(NutriApp.t('settings_current_language', { language: current.label }), true);
     }
   }
 
@@ -53,16 +48,11 @@
     const exactCode = languages.find((lang) => lang.code.toLowerCase() === lower);
     if (exactCode) return exactCode.code;
 
-    const exactLabel = languages.find(
-      (lang) => lang.label.toLowerCase() === lower || lang.native.toLowerCase() === lower || getLangDisplay(lang).toLowerCase() === lower
-    );
+    const exactLabel = languages.find((lang) => lang.label.toLowerCase() === lower || lang.native.toLowerCase() === lower);
     if (exactLabel) return exactLabel.code;
 
     const partial = languages.find(
-      (lang) =>
-        lang.label.toLowerCase().includes(lower) ||
-        lang.native.toLowerCase().includes(lower) ||
-        getLangDisplay(lang).toLowerCase().includes(lower)
+      (lang) => lang.label.toLowerCase().includes(lower) || lang.native.toLowerCase().includes(lower)
     );
     if (partial) return partial.code;
 
@@ -84,13 +74,6 @@
   fillOptions();
 
   applyButton.addEventListener('click', applyLanguageSelection);
-  input.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      applyLanguageSelection();
-    }
-  });
-  input.addEventListener('change', applyLanguageSelection);
 
   window.addEventListener('nutri:lang-changed', () => {
     NutriApp.translatePage(document);
