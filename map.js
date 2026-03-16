@@ -46,6 +46,7 @@
   let countryDataLoaded = false;
   let filterRunId = 0;
   const geocodeCache = new Map();
+  const liveResourceCache = new Map();
   const nearestFallbackLimit = 120;
 
   const markerStyleByType = {
@@ -274,6 +275,137 @@
     statusNode.textContent = text;
   }
 
+  function toFixedCoord(value) {
+    return Number(value).toFixed(3);
+  }
+
+  function liveTypeFromTags(tags) {
+    const amenity = String(tags?.amenity || '').toLowerCase();
+    const office = String(tags?.office || '').toLowerCase();
+    const social = String(tags?.social_facility || '').toLowerCase();
+
+    if (['clinic', 'hospital', 'doctors', 'pharmacy'].includes(amenity)) return 'Clinic';
+    if (amenity === 'food_bank') return 'Food Support';
+    if (office === 'ngo' || office === 'charity') return 'NGO';
+    if (amenity === 'social_facility') {
+      if (social.includes('food') || social.includes('soup')) return 'Food Support';
+      return 'NGO';
+    }
+    return 'Clinic';
+  }
+
+  function liveServicesForType(type, tags) {
+    const healthcare = String(tags?.healthcare || '').trim();
+    const speciality = String(tags?.healthcare_speciality || '').trim();
+    const base = [];
+
+    if (healthcare) base.push(healthcare.replace(/_/g, ' '));
+    if (speciality) base.push(speciality.replace(/_/g, ' '));
+
+    if (type === 'Clinic') {
+      if (!base.length) return ['Primary care', 'Child health', 'Nutrition referral'];
+      return base.slice(0, 3);
+    }
+    if (type === 'Food Support') {
+      if (!base.length) return ['Food support', 'Voucher guidance', 'Community assistance'];
+      return base.slice(0, 3);
+    }
+    if (!base.length) return ['Community support', 'Referral navigation', 'Case assistance'];
+    return base.slice(0, 3);
+  }
+
+  function pointFromOverpassElement(element) {
+    if (Number.isFinite(element?.lat) && Number.isFinite(element?.lon)) {
+      return { lat: Number(element.lat), lng: Number(element.lon) };
+    }
+    if (Number.isFinite(element?.center?.lat) && Number.isFinite(element?.center?.lon)) {
+      return { lat: Number(element.center.lat), lng: Number(element.center.lon) };
+    }
+    return null;
+  }
+
+  async function fetchLiveNearbyResources(center, maxDistanceKm, type) {
+    if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lng)) return [];
+
+    const radiusKm = Math.max(maxDistanceKm, 15);
+    const radiusM = Math.min(120000, Math.round(radiusKm * 1000));
+    const cacheKey = `${toFixedCoord(center.lat)}|${toFixedCoord(center.lng)}|${radiusM}|${type}`;
+    if (liveResourceCache.has(cacheKey)) return liveResourceCache.get(cacheKey);
+
+    const clinicClause = `nwr["amenity"~"clinic|hospital|doctors|pharmacy"](around:${radiusM},${center.lat},${center.lng});`;
+    const foodClause = `nwr["amenity"="food_bank"](around:${radiusM},${center.lat},${center.lng});`;
+    const ngoClause = `nwr["office"~"ngo|charity"](around:${radiusM},${center.lat},${center.lng});`;
+    const socialClause = `nwr["amenity"="social_facility"](around:${radiusM},${center.lat},${center.lng});`;
+
+    const clauses = type === 'Clinic'
+      ? [clinicClause]
+      : type === 'Food Support'
+        ? [foodClause, socialClause]
+        : type === 'NGO'
+          ? [ngoClause, socialClause]
+          : [clinicClause, foodClause, ngoClause, socialClause];
+
+    const query = `
+[out:json][timeout:20];
+(
+${clauses.join('\n')}
+);
+out tags center 200;
+`;
+
+    try {
+      const response = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: `data=${encodeURIComponent(query)}`
+      });
+      if (!response.ok) {
+        liveResourceCache.set(cacheKey, []);
+        return [];
+      }
+
+      const payload = await response.json();
+      const elements = Array.isArray(payload?.elements) ? payload.elements : [];
+      const seen = new Set();
+
+      const liveResources = elements
+        .map((element, idx) => {
+          const point = pointFromOverpassElement(element);
+          if (!point) return null;
+
+          const tags = element.tags || {};
+          const inferredType = liveTypeFromTags(tags);
+          if (type !== 'All' && inferredType !== type) return null;
+
+          const name = String(tags.name || '').trim() || `${inferredType} ${idx + 1}`;
+          const dedupeKey = `${name}|${toFixedCoord(point.lat)}|${toFixedCoord(point.lng)}|${inferredType}`;
+          if (seen.has(dedupeKey)) return null;
+          seen.add(dedupeKey);
+
+          return {
+            id: `live-${element.type || 'node'}-${element.id || idx}`,
+            name,
+            type: inferredType,
+            lat: point.lat,
+            lng: point.lng,
+            services: liveServicesForType(inferredType, tags),
+            open: String(tags.opening_hours || '').trim() || 'Hours not listed',
+            distance: NutriApp.haversineKm(center.lat, center.lng, point.lat, point.lng),
+            source: 'live'
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 200);
+
+      liveResourceCache.set(cacheKey, liveResources);
+      return liveResources;
+    } catch {
+      liveResourceCache.set(cacheKey, []);
+      return [];
+    }
+  }
+
   function drawCenterMarker() {
     if (!mapCenter) return;
     L.circleMarker([mapCenter.lat, mapCenter.lng], {
@@ -350,13 +482,29 @@
         return a.name.localeCompare(b.name);
       });
 
-    let filtered = mapCenter
-      ? typeFiltered.filter((resource) => resource.distance <= maxDistance)
-      : typeFiltered;
+    let liveNearby = [];
+    if (mapCenter) {
+      liveNearby = await fetchLiveNearbyResources(mapCenter, maxDistance, type);
+      if (runId !== filterRunId) return;
+    }
 
-    const usedNearestFallback = Boolean(mapCenter && !filtered.length && typeFiltered.length);
+    const combinedById = new Map();
+    [...liveNearby, ...typeFiltered].forEach((resource) => {
+      const key = `${resource.type}|${toFixedCoord(resource.lat)}|${toFixedCoord(resource.lng)}|${resource.name}`;
+      if (!combinedById.has(key)) combinedById.set(key, resource);
+    });
+    const combined = [...combinedById.values()].sort((a, b) => {
+      if (mapCenter) return (a.distance ?? Infinity) - (b.distance ?? Infinity);
+      return a.name.localeCompare(b.name);
+    });
+
+    let filtered = mapCenter
+      ? combined.filter((resource) => resource.distance <= maxDistance)
+      : combined;
+
+    const usedNearestFallback = Boolean(mapCenter && !filtered.length && combined.length);
     if (usedNearestFallback) {
-      filtered = typeFiltered.slice(0, nearestFallbackLimit);
+      filtered = combined.slice(0, nearestFallbackLimit);
     }
 
     drawCenterMarker();
