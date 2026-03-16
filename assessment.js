@@ -597,6 +597,6 @@
     };
 
     NutriApp.saveReport(report);
-    window.location.href = './results.html';
+    window.location.href = './assessment.html?view=results';
   });
 })();

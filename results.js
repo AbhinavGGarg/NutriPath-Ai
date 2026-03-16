@@ -4,6 +4,8 @@
   const resourceTypeLabel = (type) => (window.NutriApp?.getResourceTypeLabel ? window.NutriApp.getResourceTypeLabel(type) : type);
   const nutrientLabel = (name) => (window.NutriApp?.getNutrientLabel ? window.NutriApp.getNutrientLabel(name) : name);
   const dayLabel = (day) => (window.NutriApp?.getDayLabel ? window.NutriApp.getDayLabel(day) : day);
+  const isAssessmentPage = document.body?.dataset?.page === 'assessment';
+  const showInlineResults = new URLSearchParams(window.location.search).get('view') === 'results';
 
   function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -25,12 +27,19 @@
   const report = NutriApp.getCurrentReport();
   const emptyState = document.getElementById('empty-state');
   const content = document.getElementById('results-content');
+  const assessmentPanel = document.getElementById('assessment-results-panel');
+
+  if (!content) return;
+  if (isAssessmentPage && assessmentPanel && !showInlineResults) return;
+  if (assessmentPanel) assessmentPanel.classList.remove('hide');
 
   if (!report) {
-    emptyState.classList.remove('hide');
+    if (emptyState) emptyState.classList.remove('hide');
+    content.classList.add('hide');
     return;
   }
 
+  if (emptyState) emptyState.classList.add('hide');
   content.classList.remove('hide');
 
   const categoryColors = {
@@ -62,11 +71,13 @@
   riskAlert.className = `alert ${category === 'Urgent' ? 'alert-danger' : category === 'Low' ? 'alert-success' : 'alert-warn'}`;
 
   const summary = document.getElementById('result-summary');
-  summary.textContent = t('results_summary', {
-    household: report.payload.householdName,
-    date: NutriApp.formatDate(report.createdAt),
-    community: report.payload.community
-  });
+  if (summary) {
+    summary.textContent = t('results_summary', {
+      household: report.payload.householdName,
+      date: NutriApp.formatDate(report.createdAt),
+      community: report.payload.community
+    });
+  }
 
   const fallbackActionKeysByCategory = {
     Urgent: ['action_urgent_1', 'action_urgent_2', 'action_urgent_3'],
@@ -137,14 +148,26 @@
     budgetAlert.textContent = t('budget_low');
   }
 
-  document.getElementById('speak-btn').addEventListener('click', () => {
-    const text = t('results_speak_summary', {
-      risk: riskLabel(category),
-      actions: actionItems.join(' '),
-      nutrients: report.deficiencies.map((item) => nutrientLabel(item.name)).join(', ')
+  const speakButton = document.getElementById('speak-btn');
+  if (speakButton) {
+    speakButton.addEventListener('click', () => {
+      const text = t('results_speak_summary', {
+        risk: riskLabel(category),
+        actions: actionItems.join(' '),
+        nutrients: report.deficiencies.map((item) => nutrientLabel(item.name)).join(', ')
+      });
+      NutriApp.speak(text);
     });
-    NutriApp.speak(text);
-  });
+  }
 
-  document.getElementById('print-btn').addEventListener('click', () => window.print());
+  const printButton = document.getElementById('print-btn');
+  if (printButton) {
+    printButton.addEventListener('click', () => window.print());
+  }
+
+  if (isAssessmentPage && showInlineResults && assessmentPanel) {
+    setTimeout(() => {
+      assessmentPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+  }
 })();
