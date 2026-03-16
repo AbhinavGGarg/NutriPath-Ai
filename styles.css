@@ -327,6 +327,12 @@ textarea:focus {
   margin: 0.55rem 0 0.7rem;
 }
 
+.inline-search-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
 .field-hint {
   font-size: 0.82rem;
   color: var(--ink-soft);

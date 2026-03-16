@@ -133,8 +133,13 @@
           <p class="small-text" data-i18n="assessment_food_desc">Choose foods currently available in the household or local market.</p>
           <div class="field search-row">
             <label for="food-search" data-i18n="assessment_label_food_search">Food search</label>
-            <input id="food-search" type="search" placeholder="Search foods (e.g., lentils, fish, spinach)" data-i18n-placeholder="assessment_placeholder_food_search" />
+            <div class="inline-search-actions">
+              <input id="food-search" type="search" placeholder="Search foods (e.g., lentils, fish, spinach)" data-i18n-placeholder="assessment_placeholder_food_search" />
+              <button id="add-custom-food" class="btn btn-secondary" type="button">Add typed food</button>
+            </div>
+            <span id="custom-food-status" class="field-hint">If a food is not listed, type it and add it manually.</span>
           </div>
+          <div class="selected-foods" id="custom-food-list" aria-live="polite"></div>
           <div class="checkbox-grid scroll-grid" id="food-list"></div>
 
           <h3 data-i18n="assessment_section_photo">5) Optional photo input</h3>

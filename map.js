@@ -44,6 +44,8 @@
   let usingCurrentLocation = false;
   let countryCentroids = [];
   let countryDataLoaded = false;
+  let filterRunId = 0;
+  const geocodeCache = new Map();
 
   const markerStyleByType = {
     Clinic: { color: '#e63946', fillColor: '#ff6b74' },
@@ -198,6 +200,44 @@
     return null;
   }
 
+  async function geocodeCommunityInput(value) {
+    const raw = String(value || '').trim();
+    const cacheKey = normalizeText(raw);
+    if (!cacheKey) return null;
+    if (geocodeCache.has(cacheKey)) return geocodeCache.get(cacheKey);
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=${encodeURIComponent(currentLanguage())}&q=${encodeURIComponent(raw)}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        geocodeCache.set(cacheKey, null);
+        return null;
+      }
+      const data = await response.json();
+      if (!Array.isArray(data) || !data.length) {
+        geocodeCache.set(cacheKey, null);
+        return null;
+      }
+
+      const top = data[0];
+      const resolved = {
+        lat: Number(top.lat),
+        lng: Number(top.lon),
+        label: raw
+      };
+      if (!Number.isFinite(resolved.lat) || !Number.isFinite(resolved.lng)) {
+        geocodeCache.set(cacheKey, null);
+        return null;
+      }
+
+      geocodeCache.set(cacheKey, resolved);
+      return resolved;
+    } catch {
+      geocodeCache.set(cacheKey, null);
+      return null;
+    }
+  }
+
   function renderHotspots() {
     hotspotLayer.clearLayers();
 
@@ -258,7 +298,8 @@
     });
   }
 
-  function applyFilters() {
+  async function applyFilters() {
+    const runId = ++filterRunId;
     const type = typeSelect.value;
     const maxDistance = Number(distanceRange.value);
     const rawCommunity = String(communityInput.value || '').trim();
@@ -275,10 +316,20 @@
         communityInput.value = inputMatch.label;
         map.setView([mapCenter.lat, mapCenter.lng], 11);
       } else if (rawCommunity) {
-        mapCenter = null;
-        centerLabel = '';
-        map.setView([18, 10], 2);
-        renderStatus(t('map_status_unrecognized'));
+        const geocoded = await geocodeCommunityInput(rawCommunity);
+        if (runId !== filterRunId) return;
+
+        if (geocoded) {
+          usingCurrentLocation = false;
+          mapCenter = { lat: geocoded.lat, lng: geocoded.lng };
+          centerLabel = geocoded.label;
+          map.setView([mapCenter.lat, mapCenter.lng], 10);
+        } else {
+          mapCenter = null;
+          centerLabel = '';
+          map.setView([18, 10], 2);
+          renderStatus(t('map_status_unrecognized'));
+        }
       } else {
         mapCenter = null;
         centerLabel = '';

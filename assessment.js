@@ -19,6 +19,9 @@
   const symptomNode = document.getElementById('symptom-list');
   const foodNode = document.getElementById('food-list');
   const foodSearchNode = document.getElementById('food-search');
+  const addCustomFoodButton = document.getElementById('add-custom-food');
+  const customFoodNode = document.getElementById('custom-food-list');
+  const customFoodStatusNode = document.getElementById('custom-food-status');
   const communityNode = document.getElementById('community');
   const communityListNode = document.getElementById('community-options');
   const languageNode = document.getElementById('language');
@@ -47,8 +50,11 @@
     });
 
   const sortedFoods = NutriData.foods.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const selectedCustomFoods = new Map();
+  let customFoodCounter = 1;
 
   function getFoodLabel(food) {
+    if (food?.custom) return food.name;
     const key = `food_${food.id}`;
     const translated = t(key);
     return translated === key ? food.name : translated;
@@ -85,6 +91,7 @@
 
   renderSymptoms();
   renderFoods();
+  renderCustomFoods();
 
   const requiredFields = [
     'role',
@@ -109,6 +116,114 @@
       .toLowerCase()
       .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim();
+  }
+
+  function toTitleCase(value) {
+    return String(value || '')
+      .trim()
+      .split(/\s+/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  function inferCustomNutrients(name) {
+    const text = normalizeText(name);
+    const found = new Set();
+    const keywordGroups = [
+      { words: ['bread', 'roti', 'chapati', 'rice', 'wheat', 'maize', 'corn', 'oats', 'millet', 'sorghum', 'potato', 'cassava', 'yam', 'quinoa', 'barley', 'pasta', 'noodle'], nutrients: ['carbs', 'calories', 'fiber'] },
+      { words: ['beans', 'lentil', 'chickpea', 'pea', 'soy', 'tofu', 'egg', 'fish', 'chicken', 'beef', 'goat', 'meat', 'milk', 'yogurt', 'cheese', 'groundnut', 'peanut', 'nut'], nutrients: ['protein'] },
+      { words: ['spinach', 'kale', 'moringa', 'leaf', 'leafy', 'carrot', 'pumpkin', 'mango', 'papaya', 'orange', 'guava', 'broccoli', 'tomato', 'cabbage', 'okra', 'fruit', 'vegetable'], nutrients: ['vitaminA', 'vitaminC', 'folate'] },
+      { words: ['seed', 'sesame', 'sunflower', 'almond', 'avocado', 'oil', 'butter'], nutrients: ['fat', 'calories'] },
+      { words: ['liver', 'beef', 'spinach', 'lentil'], nutrients: ['iron'] },
+      { words: ['fish', 'egg', 'meat', 'bean'], nutrients: ['zinc'] }
+    ];
+
+    keywordGroups.forEach((group) => {
+      if (group.words.some((word) => text.includes(word))) {
+        group.nutrients.forEach((nutrient) => found.add(nutrient));
+      }
+    });
+
+    if (!found.size) found.add('calories');
+    return [...found];
+  }
+
+  function renderCustomFoods() {
+    if (!customFoodNode) return;
+    customFoodNode.innerHTML = '';
+
+    [...selectedCustomFoods.values()].forEach((food) => {
+      const chip = document.createElement('span');
+      chip.className = 'selected-food-chip';
+      chip.innerHTML = `
+        ${food.name}
+        <button type="button" data-remove-custom-food="${food.id}" aria-label="Remove ${food.name}">x</button>
+      `;
+      customFoodNode.appendChild(chip);
+    });
+  }
+
+  function findKnownFoodByInput(rawValue) {
+    const query = normalizeText(rawValue);
+    if (!query) return null;
+
+    const exact = sortedFoods.find(
+      (food) => normalizeText(food.name) === query || normalizeText(getFoodLabel(food)) === query
+    );
+    if (exact) return exact;
+
+    return sortedFoods.find(
+      (food) => normalizeText(food.name).includes(query) || normalizeText(getFoodLabel(food)).includes(query)
+    ) || null;
+  }
+
+  function createCustomFood(rawValue) {
+    const clean = String(rawValue || '').trim();
+    if (!clean) return null;
+    const name = toTitleCase(clean);
+
+    const existing = [...selectedCustomFoods.values()].find((food) => normalizeText(food.name) === normalizeText(name));
+    if (existing) return existing;
+
+    return {
+      id: `custom_${customFoodCounter++}`,
+      custom: true,
+      name,
+      nutrients: inferCustomNutrients(name),
+      cost: 1.4,
+      score: 55
+    };
+  }
+
+  function addFoodFromTypedInput() {
+    if (!foodSearchNode) return;
+    const raw = String(foodSearchNode.value || '').trim();
+    if (!raw) {
+      if (customFoodStatusNode) customFoodStatusNode.textContent = 'Type a food name first.';
+      return;
+    }
+
+    const knownFood = findKnownFoodByInput(raw);
+    if (knownFood) {
+      const checkbox = form.querySelector(`input[name="foods"][value="${knownFood.id}"]`);
+      if (checkbox) checkbox.checked = true;
+      const normalizedKnown = normalizeText(knownFood.name);
+      [...selectedCustomFoods.values()].forEach((food) => {
+        if (normalizeText(food.name) === normalizedKnown) selectedCustomFoods.delete(food.id);
+      });
+      if (customFoodStatusNode) customFoodStatusNode.textContent = `Added from list: ${getFoodLabel(knownFood)}.`;
+    } else {
+      const customFood = createCustomFood(raw);
+      if (customFood) {
+        selectedCustomFoods.set(customFood.id, customFood);
+        if (customFoodStatusNode) customFoodStatusNode.textContent = `Added custom food: ${customFood.name}.`;
+      }
+    }
+
+    foodSearchNode.value = '';
+    filterFoods('');
+    renderCustomFoods();
+    updateProgress();
   }
 
   function resolveLanguage(value) {
@@ -173,7 +288,7 @@
     });
 
     if (form.querySelectorAll('input[name="symptoms"]:checked').length > 0) filled += 1;
-    if (form.querySelectorAll('input[name="foods"]:checked').length > 0) filled += 1;
+    if (form.querySelectorAll('input[name="foods"]:checked').length > 0 || selectedCustomFoods.size > 0) filled += 1;
 
     const pct = Math.round((filled / total) * 100);
     const bar = progressNode.querySelector('span');
@@ -188,11 +303,35 @@
     foodSearchNode.addEventListener('input', () => {
       filterFoods(foodSearchNode.value);
     });
+
+    foodSearchNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        addFoodFromTypedInput();
+      }
+    });
+  }
+
+  if (addCustomFoodButton) {
+    addCustomFoodButton.addEventListener('click', addFoodFromTypedInput);
+  }
+
+  if (customFoodNode) {
+    customFoodNode.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const id = target.dataset.removeCustomFood;
+      if (!id) return;
+      selectedCustomFoods.delete(id);
+      renderCustomFoods();
+      updateProgress();
+    });
   }
 
   window.addEventListener('nutri:lang-changed', () => {
     renderSymptoms();
     renderFoods();
+    renderCustomFoods();
     updateProgress();
   });
 
@@ -389,9 +528,12 @@
     validationNode.classList.add('hide');
 
     const selectedSymptoms = getSelected('symptoms');
-    const selectedFoodIds = getSelected('foods');
+    const selectedKnownFoodIds = getSelected('foods');
+    const selectedKnownFoods = NutriData.foods.filter((food) => selectedKnownFoodIds.includes(food.id));
+    const selectedCustomFoodList = [...selectedCustomFoods.values()];
+    const selectedFoods = [...selectedKnownFoods, ...selectedCustomFoodList];
 
-    if (selectedFoodIds.length < 3) {
+    if (selectedFoods.length < 3) {
       validationNode.textContent = t('validation_food_min');
       validationNode.classList.remove('hide');
       return;
@@ -426,7 +568,7 @@
       }
     }
 
-    const selectedFoods = NutriData.foods.filter((food) => selectedFoodIds.includes(food.id));
+    const selectedFoodIds = selectedFoods.map((food) => food.id);
     const deficiencies = inferDeficiencies(selectedSymptoms, selectedFoods);
     const riskOutput = computeRisk(payload, selectedSymptoms, selectedFoods);
     const mealPlan = buildMealPlan(selectedFoods, deficiencies, payload.weeklyBudget, payload.householdSize);
@@ -438,6 +580,7 @@
       payload,
       selectedSymptoms,
       selectedFoodIds,
+      selectedCustomFoods: selectedCustomFoodList,
       riskOutput,
       deficiencies,
       mealPlan,
