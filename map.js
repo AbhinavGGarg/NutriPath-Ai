@@ -324,6 +324,16 @@
     return null;
   }
 
+  async function timedFetch(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function fetchLiveNearbyResources(center, maxDistanceKm, type) {
     if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lng)) return [];
 
@@ -354,17 +364,33 @@ out tags center 200;
 `;
 
     try {
-      const response = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-        body: `data=${encodeURIComponent(query)}`
-      });
-      if (!response.ok) {
+      const endpoints = [
+        'https://overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter'
+      ];
+
+      let payload = null;
+      for (const endpoint of endpoints) {
+        try {
+          const response = await timedFetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: `data=${encodeURIComponent(query)}`
+          }, 5000);
+
+          if (!response.ok) continue;
+          payload = await response.json();
+          break;
+        } catch {
+          continue;
+        }
+      }
+
+      if (!payload) {
         liveResourceCache.set(cacheKey, []);
         return [];
       }
 
-      const payload = await response.json();
       const elements = Array.isArray(payload?.elements) ? payload.elements : [];
       const seen = new Set();
 
@@ -431,44 +457,7 @@ out tags center 200;
     });
   }
 
-  async function applyFilters() {
-    const runId = ++filterRunId;
-    const type = typeSelect.value;
-    const maxDistance = Number(distanceRange.value);
-    const rawCommunity = String(communityInput.value || '').trim();
-
-    markerLayer.clearLayers();
-    resourceList.innerHTML = '';
-
-    if (!(usingCurrentLocation && rawCommunity === t('current_location') && mapCenter)) {
-      const inputMatch = resolveCommunityInput(communityInput.value);
-      if (inputMatch) {
-        usingCurrentLocation = false;
-        mapCenter = { lat: inputMatch.point.lat, lng: inputMatch.point.lng };
-        centerLabel = inputMatch.label;
-        communityInput.value = inputMatch.label;
-        map.setView([mapCenter.lat, mapCenter.lng], 11);
-      } else if (rawCommunity) {
-        const geocoded = await geocodeCommunityInput(rawCommunity);
-        if (runId !== filterRunId) return;
-
-        if (geocoded) {
-          usingCurrentLocation = false;
-          mapCenter = { lat: geocoded.lat, lng: geocoded.lng };
-          centerLabel = geocoded.label;
-          map.setView([mapCenter.lat, mapCenter.lng], 10);
-        } else {
-          mapCenter = null;
-          centerLabel = '';
-          map.setView([18, 10], 2);
-          renderStatus(t('map_status_unrecognized'));
-        }
-      } else {
-        mapCenter = null;
-        centerLabel = '';
-      }
-    }
-
+  function buildCombinedResources(type, liveNearby) {
     const typeFiltered = NutriData.resources
       .map((resource) => {
         const distance = mapCenter
@@ -476,37 +465,36 @@ out tags center 200;
           : null;
         return { ...resource, distance };
       })
-      .filter((resource) => (type === 'All' ? true : resource.type === type))
-      .sort((a, b) => {
-        if (mapCenter) return (a.distance ?? Infinity) - (b.distance ?? Infinity);
-        return a.name.localeCompare(b.name);
-      });
-
-    let liveNearby = [];
-    if (mapCenter) {
-      liveNearby = await fetchLiveNearbyResources(mapCenter, maxDistance, type);
-      if (runId !== filterRunId) return;
-    }
+      .filter((resource) => (type === 'All' ? true : resource.type === type));
 
     const combinedById = new Map();
-    [...liveNearby, ...typeFiltered].forEach((resource) => {
+    [...(liveNearby || []), ...typeFiltered].forEach((resource) => {
       const key = `${resource.type}|${toFixedCoord(resource.lat)}|${toFixedCoord(resource.lng)}|${resource.name}`;
       if (!combinedById.has(key)) combinedById.set(key, resource);
     });
-    const combined = [...combinedById.values()].sort((a, b) => {
+
+    return [...combinedById.values()].sort((a, b) => {
       if (mapCenter) return (a.distance ?? Infinity) - (b.distance ?? Infinity);
       return a.name.localeCompare(b.name);
     });
+  }
 
+  function pickFilteredResources(allResources, maxDistance) {
     let filtered = mapCenter
-      ? combined.filter((resource) => resource.distance <= maxDistance)
-      : combined;
+      ? allResources.filter((resource) => resource.distance <= maxDistance)
+      : allResources;
 
-    const usedNearestFallback = Boolean(mapCenter && !filtered.length && combined.length);
+    const usedNearestFallback = Boolean(mapCenter && !filtered.length && allResources.length);
     if (usedNearestFallback) {
-      filtered = combined.slice(0, nearestFallbackLimit);
+      filtered = allResources.slice(0, nearestFallbackLimit);
     }
 
+    return { filtered, usedNearestFallback };
+  }
+
+  function renderFilteredResources(filtered, maxDistance, usedNearestFallback) {
+    markerLayer.clearLayers();
+    resourceList.innerHTML = '';
     drawCenterMarker();
 
     if (filtered.length === 0) {
@@ -530,7 +518,7 @@ out tags center 200;
         fillOpacity: 0.85
       }).addTo(markerLayer);
       const typeLabel = resourceTypeLabel(resource.type);
-      const distanceText = mapCenter
+      const distanceText = mapCenter && Number.isFinite(resource.distance)
         ? t('map_distance_away', { distance: resource.distance.toFixed(1) })
         : t('map_distance_pending');
 
@@ -577,6 +565,57 @@ out tags center 200;
           summary: buildSummaryByType(filtered)
         })
       );
+    }
+  }
+
+  async function applyFilters() {
+    const runId = ++filterRunId;
+    const type = typeSelect.value;
+    const maxDistance = Number(distanceRange.value);
+    const rawCommunity = String(communityInput.value || '').trim();
+
+    if (!(usingCurrentLocation && rawCommunity === t('current_location') && mapCenter)) {
+      const inputMatch = resolveCommunityInput(communityInput.value);
+      if (inputMatch) {
+        usingCurrentLocation = false;
+        mapCenter = { lat: inputMatch.point.lat, lng: inputMatch.point.lng };
+        centerLabel = inputMatch.label;
+        communityInput.value = inputMatch.label;
+        map.setView([mapCenter.lat, mapCenter.lng], 11);
+      } else if (rawCommunity) {
+        const geocoded = await geocodeCommunityInput(rawCommunity);
+        if (runId !== filterRunId) return;
+
+        if (geocoded) {
+          usingCurrentLocation = false;
+          mapCenter = { lat: geocoded.lat, lng: geocoded.lng };
+          centerLabel = geocoded.label;
+          map.setView([mapCenter.lat, mapCenter.lng], 10);
+        } else {
+          mapCenter = null;
+          centerLabel = '';
+          map.setView([18, 10], 2);
+          renderStatus(t('map_status_unrecognized'));
+        }
+      } else {
+        mapCenter = null;
+        centerLabel = '';
+      }
+    }
+
+    const staticCombined = buildCombinedResources(type, []);
+    const staticSelection = pickFilteredResources(staticCombined, maxDistance);
+    renderFilteredResources(staticSelection.filtered, maxDistance, staticSelection.usedNearestFallback);
+
+    if (mapCenter) {
+      fetchLiveNearbyResources(mapCenter, maxDistance, type).then((liveNearby) => {
+        if (runId !== filterRunId) return;
+        if (!Array.isArray(liveNearby) || !liveNearby.length) return;
+
+        const mergedCombined = buildCombinedResources(type, liveNearby);
+        const mergedSelection = pickFilteredResources(mergedCombined, maxDistance);
+        renderFilteredResources(mergedSelection.filtered, maxDistance, mergedSelection.usedNearestFallback);
+      });
     }
   }
 

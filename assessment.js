@@ -17,7 +17,6 @@
   ];
 
   const symptomNode = document.getElementById('symptom-list');
-  const foodNode = document.getElementById('food-list');
   const communityNode = document.getElementById('community');
   const communityListNode = document.getElementById('community-options');
   const languageNode = document.getElementById('language');
@@ -45,8 +44,6 @@
       languageListNode.appendChild(option);
     });
 
-  const sortedFoods = NutriData.foods.slice().sort((a, b) => a.name.localeCompare(b.name));
-
   function getFoodLabel(food) {
     if (food?.custom) return food.name;
     const key = `food_${food.id}`;
@@ -66,23 +63,7 @@
     });
   }
 
-  function renderFoods() {
-    const checked = new Set(getSelected('foods'));
-    foodNode.innerHTML = '';
-    const foodFragment = document.createDocumentFragment();
-    sortedFoods.forEach((food) => {
-      const label = document.createElement('label');
-      label.className = 'checkbox-item';
-      const displayName = getFoodLabel(food);
-      const isChecked = checked.has(food.id) ? 'checked' : '';
-      label.innerHTML = `<input type="checkbox" name="foods" value="${food.id}" ${isChecked} /> <span>${displayName}</span>`;
-      foodFragment.appendChild(label);
-    });
-    foodNode.appendChild(foodFragment);
-  }
-
   renderSymptoms();
-  renderFoods();
 
   const requiredFields = [
     'role',
@@ -151,7 +132,7 @@
   }
 
   function updateProgress() {
-    const total = requiredFields.length + 2;
+    const total = requiredFields.length + 1;
     let filled = 0;
 
     requiredFields.forEach((field) => {
@@ -160,7 +141,6 @@
     });
 
     if (form.querySelectorAll('input[name="symptoms"]:checked').length > 0) filled += 1;
-    if (form.querySelectorAll('input[name="foods"]:checked').length > 0) filled += 1;
 
     const pct = Math.round((filled / total) * 100);
     const bar = progressNode.querySelector('span');
@@ -173,7 +153,6 @@
 
   window.addEventListener('nutri:lang-changed', () => {
     renderSymptoms();
-    renderFoods();
     updateProgress();
   });
 
@@ -324,7 +303,7 @@
     if (perCapitaBudget < 2.2) risk += 12;
     else if (perCapitaBudget < 3.5) risk += 6;
 
-    if (selectedFoods.length < 5) risk += 8;
+    if (selectedFoods.length > 0 && selectedFoods.length < 5) risk += 8;
 
     risk = Math.max(1, Math.min(99, Math.round(risk)));
 
@@ -372,14 +351,8 @@
     validationNode.classList.add('hide');
 
     const selectedSymptoms = getSelected('symptoms');
-    const selectedFoodIds = getSelected('foods');
-    const selectedFoods = NutriData.foods.filter((food) => selectedFoodIds.includes(food.id));
-
-    if (selectedFoods.length < 3) {
-      validationNode.textContent = t('validation_food_min');
-      validationNode.classList.remove('hide');
-      return;
-    }
+    const selectedFoodIds = [];
+    const selectedFoods = [];
 
     const matchedCommunity = resolveCommunity(form.community.value);
 
