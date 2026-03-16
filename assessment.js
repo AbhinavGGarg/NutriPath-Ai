@@ -69,7 +69,7 @@
     'language',
     'householdName',
     'community',
-    'ageMonths',
+    'ageYears',
     'sex',
     'householdSize',
     'weeklyBudget',
@@ -286,7 +286,7 @@
     else if (payload.muac < 13.5) risk += 12;
 
     const bmi = payload.weight / ((payload.height / 100) * (payload.height / 100));
-    if (payload.ageMonths <= 60) {
+    if (payload.ageYears <= 5) {
       if (bmi < 13.2) risk += 22;
       else if (bmi < 14) risk += 11;
     } else {
@@ -376,7 +376,7 @@
       householdName: form.householdName.value.trim(),
       community: matchedCommunity.label,
       communityKey: matchedCommunity.key,
-      ageMonths: Number(form.ageMonths.value),
+      ageYears: Number(form.ageYears.value),
       sex: form.sex.value,
       householdSize: Number(form.householdSize.value),
       weeklyBudget: Number(form.weeklyBudget.value),
