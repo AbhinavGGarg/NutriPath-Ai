@@ -221,6 +221,120 @@
       });
     }
 
+    function portionHint(food) {
+      if (!food) return '';
+      if (food.nutrients.includes('protein')) return `1 cup ${foodLabel(food)}`;
+      if (food.nutrients.includes('carbs')) return `1 cup ${foodLabel(food)}`;
+      if (food.nutrients.includes('fat') || food.nutrients.includes('omega3')) return `2-3 tbsp ${foodLabel(food)}`;
+      if (food.nutrients.includes('vitaminA') || food.nutrients.includes('vitaminC') || food.nutrients.includes('folate')) {
+        return `1 handful ${foodLabel(food)}`;
+      }
+      return `1 serving ${foodLabel(food)}`;
+    }
+
+    function uniqueFoods(...groups) {
+      const map = new Map();
+      groups.flat().filter(Boolean).forEach((food) => {
+        if (!map.has(food.id)) map.set(food.id, food);
+      });
+      return [...map.values()];
+    }
+
+    function renderMealIdeas(recipes) {
+      mealList.innerHTML = '';
+      if (!recipes.length) {
+        const li = document.createElement('li');
+        li.textContent = 'No meal ideas yet.';
+        mealList.appendChild(li);
+        return;
+      }
+
+      recipes.forEach((recipe) => {
+        const li = document.createElement('li');
+        li.className = 'meal-idea-item';
+
+        const ingredientText = recipe.ingredients.map((food) => portionHint(food)).join(', ');
+        const stepText = recipe.steps.join(' ');
+        li.innerHTML = `
+          <strong class="meal-idea-name">${recipe.name}</strong>
+          <div class="small-text"><strong>Ingredients:</strong> ${ingredientText}</div>
+          <div class="small-text"><strong>How to make:</strong> ${stepText}</div>
+          <div class="small-text"><strong>Nutrition focus:</strong> ${recipe.benefit}</div>
+        `;
+        mealList.appendChild(li);
+      });
+    }
+
+    function buildRecipes(selectedFoods) {
+      const carbFoods = selectedFoods.filter((food) => food.nutrients.includes('carbs'));
+      const proteinFoods = selectedFoods.filter((food) => food.nutrients.includes('protein'));
+      const protectiveFoods = selectedFoods.filter((food) =>
+        food.nutrients.some((nutrient) => ['vitaminA', 'vitaminC', 'iron', 'folate'].includes(nutrient))
+      );
+      const flavorFoods = selectedFoods.filter((food) => ['onion', 'tomato', 'okra', 'cabbage'].includes(food.id));
+
+      const recipes = [];
+
+      function addRecipe(name, ingredients, benefit) {
+        const parts = uniqueFoods(ingredients).slice(0, 5);
+        if (!parts.length) return;
+        const key = parts.map((food) => food.id).sort().join('|');
+        if (recipes.some((item) => item.key === key)) return;
+
+        const main = parts[0];
+        const second = parts[1] || parts[0];
+        const steps = [
+          `Cook ${portionHint(main)} until soft.`,
+          `Add ${portionHint(second)} and simmer for 10-12 minutes.`,
+          parts.length > 2 ? `Stir in ${portionHint(parts[2])} near the end to keep nutrients.` : 'Serve warm.'
+        ];
+
+        recipes.push({ key, name, ingredients: parts, benefit, steps });
+      }
+
+      if (carbFoods.length && proteinFoods.length && protectiveFoods.length) {
+        addRecipe(
+          `${foodLabel(proteinFoods[0])} Power Bowl`,
+          [carbFoods[0], proteinFoods[0], protectiveFoods[0], flavorFoods[0]],
+          'Balanced energy + protein + protective vitamins'
+        );
+      }
+
+      if (proteinFoods.length >= 2) {
+        addRecipe(
+          `${foodLabel(proteinFoods[0])} Protein Stew`,
+          [proteinFoods[0], proteinFoods[1], protectiveFoods[0], flavorFoods[0]],
+          'High protein support for growth and recovery'
+        );
+      }
+
+      if (protectiveFoods.length) {
+        addRecipe(
+          `Iron Boost ${foodLabel(protectiveFoods[0])} Mix`,
+          [protectiveFoods[0], proteinFoods[0], carbFoods[0], flavorFoods[0]],
+          'Iron + vitamin support for better blood health'
+        );
+      }
+
+      if (carbFoods.length) {
+        addRecipe(
+          `Family Energy ${foodLabel(carbFoods[0])} Plate`,
+          [carbFoods[0], proteinFoods[0], protectiveFoods[0], selectedFoods[0]],
+          'Affordable calories with better nutrient density'
+        );
+      }
+
+      if (recipes.length < 3 && selectedFoods.length >= 2) {
+        addRecipe(
+          `${foodLabel(selectedFoods[0])} & ${foodLabel(selectedFoods[1])} Quick Meal`,
+          [selectedFoods[0], selectedFoods[1], selectedFoods[2]],
+          'Simple meal using what you already have'
+        );
+      }
+
+      return recipes.slice(0, 5);
+    }
+
     function analyzeFoods() {
       const selectedFoods = foods.filter((food) => selectedFoodIds.has(food.id));
       if (!selectedFoods.length) {
@@ -229,30 +343,7 @@
         return;
       }
 
-      const carbFoods = selectedFoods.filter((food) => food.nutrients.includes('carbs'));
-      const proteinFoods = selectedFoods.filter((food) => food.nutrients.includes('protein'));
-      const protectiveFoods = selectedFoods.filter((food) =>
-        food.nutrients.some((nutrient) => ['vitaminA', 'vitaminC', 'iron', 'folate'].includes(nutrient))
-      );
-
-      const mealIdeas = [];
-      const maxMeals = 6;
-      for (let idx = 0; idx < maxMeals; idx += 1) {
-        if (carbFoods.length && proteinFoods.length && protectiveFoods.length) {
-          const carb = carbFoods[idx % carbFoods.length];
-          const protein = proteinFoods[idx % proteinFoods.length];
-          const protective = protectiveFoods[idx % protectiveFoods.length];
-          const idea = `${foodLabel(carb)} + ${foodLabel(protein)} + ${foodLabel(protective)}`;
-          if (!mealIdeas.includes(idea)) mealIdeas.push(idea);
-        } else if (selectedFoods.length >= 2) {
-          const a = selectedFoods[idx % selectedFoods.length];
-          const b = selectedFoods[(idx + 1) % selectedFoods.length];
-          const idea = `${foodLabel(a)} + ${foodLabel(b)}`;
-          if (!mealIdeas.includes(idea)) mealIdeas.push(idea);
-        } else {
-          mealIdeas.push(foodLabel(selectedFoods[0]));
-        }
-      }
+      const mealIdeas = buildRecipes(selectedFoods);
 
       const nutrientToFoods = new Map();
       selectedFoods.forEach((food) => {
@@ -298,7 +389,7 @@
         addons.push('Great coverage across core nutrients. Keep rotating foods for diversity.');
       }
 
-      listToUi(mealList, mealIdeas, 'No meal ideas yet.');
+      renderMealIdeas(mealIdeas);
       listToUi(nutrientList, nutrientInsights, 'No nutrient data yet.');
       listToUi(addonList, addons, 'No add-on suggestions.');
       resultShell.classList.remove('hide');

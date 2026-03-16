@@ -564,6 +564,21 @@ textarea:focus {
   gap: 0.4rem;
 }
 
+.meal-idea-item {
+  background: rgba(23, 163, 152, 0.06);
+  border: 1px solid rgba(11, 60, 93, 0.1);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  list-style: none;
+}
+
+.meal-idea-name {
+  display: block;
+  font-family: Sora, sans-serif;
+  color: var(--primary);
+  margin-bottom: 0.2rem;
+}
+
 .footer {
   padding: 1.4rem 0 2rem;
   color: var(--ink-soft);
