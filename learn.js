@@ -106,7 +106,8 @@
       return;
     }
 
-    const selectedFoodIds = new Set();
+    const selectedFoods = new Map();
+    let customCounter = 1;
     let hasAnalysis = false;
 
     const foods = NutriData.foods.slice().sort((a, b) => a.name.localeCompare(b.name));
@@ -127,6 +128,7 @@
     };
 
     function foodLabel(food) {
+      if (food.custom) return food.name;
       const key = `food_${food.id}`;
       const translated = t(key);
       return translated === key ? food.name : translated;
@@ -156,22 +158,21 @@
 
     function renderSelectedFoods() {
       selectedNode.innerHTML = '';
-      if (!selectedFoodIds.size) {
+      if (!selectedFoods.size) {
         setStatus('No foods added yet. Add foods and click Analyze Foods.');
         return;
       }
 
-      const selectedFoods = foods.filter((food) => selectedFoodIds.has(food.id));
-      selectedFoods.forEach((food) => {
+      [...selectedFoods.values()].forEach((food) => {
         const chip = document.createElement('span');
         chip.className = 'selected-food-chip';
         chip.innerHTML = `
           ${foodLabel(food)}
-          <button type="button" data-remove-food="${food.id}" aria-label="Remove ${foodLabel(food)}">x</button>
+          <button type="button" data-remove-food="${food.key}" aria-label="Remove ${foodLabel(food)}">x</button>
         `;
         selectedNode.appendChild(chip);
       });
-      setStatus(`Selected ${selectedFoodIds.size} food(s). Click Analyze Foods to see insights.`);
+      setStatus(`Selected ${selectedFoods.size} food(s). Click Analyze Foods to see insights.`);
     }
 
     function clearAnalysisLists() {
@@ -180,25 +181,87 @@
       addonList.innerHTML = '';
     }
 
+    function normalizeText(value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function toTitleCase(value) {
+      return String(value || '')
+        .trim()
+        .split(/\s+/)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+    }
+
+    function inferCustomNutrients(name) {
+      const text = normalizeText(name);
+      const found = new Set();
+      const keywordGroups = [
+        { words: ['bread', 'roti', 'chapati', 'rice', 'wheat', 'maize', 'corn', 'oats', 'millet', 'sorghum', 'potato', 'cassava', 'yam', 'quinoa', 'barley', 'pasta', 'noodle'], nutrients: ['carbs', 'calories', 'fiber'] },
+        { words: ['beans', 'lentil', 'chickpea', 'pea', 'soy', 'tofu', 'egg', 'fish', 'chicken', 'beef', 'goat', 'meat', 'milk', 'yogurt', 'cheese', 'groundnut', 'peanut', 'nut'], nutrients: ['protein'] },
+        { words: ['spinach', 'kale', 'moringa', 'leaf', 'leafy', 'carrot', 'pumpkin', 'mango', 'papaya', 'orange', 'guava', 'broccoli', 'tomato', 'cabbage', 'okra', 'fruit', 'vegetable'], nutrients: ['vitaminA', 'vitaminC', 'folate'] },
+        { words: ['seed', 'sesame', 'sunflower', 'almond', 'avocado', 'oil', 'butter'], nutrients: ['fat', 'calories'] },
+        { words: ['liver', 'beef', 'spinach', 'lentil'], nutrients: ['iron'] },
+        { words: ['fish', 'egg', 'meat', 'bean'], nutrients: ['zinc'] }
+      ];
+
+      keywordGroups.forEach((group) => {
+        if (group.words.some((word) => text.includes(word))) {
+          group.nutrients.forEach((nutrient) => found.add(nutrient));
+        }
+      });
+
+      if (!found.size) {
+        found.add('calories');
+      }
+      return [...found];
+    }
+
+    function createCustomFood(raw) {
+      const clean = String(raw || '').trim();
+      const name = toTitleCase(clean);
+      const existing = [...selectedFoods.values()].find((food) => normalizeText(food.name) === normalizeText(name));
+      if (existing) return existing;
+
+      const id = `custom_${customCounter++}`;
+      return {
+        id,
+        key: id,
+        name,
+        custom: true,
+        nutrients: inferCustomNutrients(name),
+        cost: 1.4,
+        score: 55
+      };
+    }
+
     function resolveFoodFromInput(raw) {
-      const query = String(raw || '').trim().toLowerCase();
+      const query = normalizeText(raw);
       if (!query) return null;
 
-      const exact = foods.find((food) => food.name.toLowerCase() === query || foodLabel(food).toLowerCase() === query);
-      if (exact) return exact;
+      const exact = foods.find((food) => normalizeText(food.name) === query || normalizeText(foodLabel(food)) === query);
+      if (exact) return { ...exact, key: exact.id, custom: false };
 
-      return foods.find(
-        (food) => food.name.toLowerCase().includes(query) || foodLabel(food).toLowerCase().includes(query)
-      ) || null;
+      const close = foods.find(
+        (food) => normalizeText(food.name).includes(query) || normalizeText(foodLabel(food)).includes(query)
+      );
+      if (close) return { ...close, key: close.id, custom: false };
+
+      return createCustomFood(raw);
     }
 
     function addFood() {
       const match = resolveFoodFromInput(input.value);
       if (!match) {
-        setStatus('Food not recognized. Try another name from the suggestions.');
+        setStatus('Type a food name first, then click Add food.');
         return;
       }
-      selectedFoodIds.add(match.id);
+      selectedFoods.set(match.key, match);
       input.value = '';
       hasAnalysis = false;
       resultShell.classList.add('hide');
@@ -221,14 +284,62 @@
       });
     }
 
+    function canonicalText(food) {
+      return normalizeText(`${food.id} ${food.name}`);
+    }
+
+    function hasWord(food, words) {
+      const text = canonicalText(food);
+      return words.some((word) => text.includes(word));
+    }
+
+    function isBread(food) {
+      return hasWord(food, ['bread', 'roti', 'chapati', 'tortilla', 'pita', 'bun']);
+    }
+
+    function isEgg(food) {
+      return hasWord(food, ['egg']);
+    }
+
+    function isDairy(food) {
+      return hasWord(food, ['milk', 'yogurt', 'cheese', 'soy milk']);
+    }
+
+    function isLegume(food) {
+      return hasWord(food, ['bean', 'lentil', 'chickpea', 'pea', 'cowpea', 'gram']);
+    }
+
+    function isGrainOrStarch(food) {
+      return hasWord(food, ['rice', 'maize', 'corn', 'millet', 'sorghum', 'oat', 'quinoa', 'barley', 'wheat', 'cassava', 'yam', 'potato']);
+    }
+
+    function isMeatOrFish(food) {
+      return hasWord(food, ['fish', 'sardine', 'tilapia', 'anchov', 'chicken', 'beef', 'goat', 'liver', 'meat']);
+    }
+
+    function isLeafyOrVeg(food) {
+      return hasWord(food, ['spinach', 'kale', 'moringa', 'cabbage', 'broccoli', 'carrot', 'tomato', 'onion', 'okra', 'pumpkin', 'amaranth', 'beetroot']);
+    }
+
+    function isFruit(food) {
+      return hasWord(food, ['banana', 'mango', 'orange', 'papaya', 'guava', 'apple', 'avocado', 'date', 'fruit']);
+    }
+
+    function isNutsOrSeeds(food) {
+      return hasWord(food, ['nut', 'seed', 'peanut', 'groundnut', 'sesame', 'sunflower', 'almond', 'paste']);
+    }
+
     function portionHint(food) {
       if (!food) return '';
-      if (food.nutrients.includes('protein')) return `1 cup ${foodLabel(food)}`;
-      if (food.nutrients.includes('carbs')) return `1 cup ${foodLabel(food)}`;
-      if (food.nutrients.includes('fat') || food.nutrients.includes('omega3')) return `2-3 tbsp ${foodLabel(food)}`;
-      if (food.nutrients.includes('vitaminA') || food.nutrients.includes('vitaminC') || food.nutrients.includes('folate')) {
-        return `1 handful ${foodLabel(food)}`;
-      }
+      if (isBread(food)) return `2 slices ${foodLabel(food)}`;
+      if (isEgg(food)) return `2 ${foodLabel(food)}`;
+      if (isDairy(food)) return `1 cup ${foodLabel(food)}`;
+      if (isLegume(food)) return `3/4 cup cooked ${foodLabel(food)}`;
+      if (isGrainOrStarch(food)) return `1 cup cooked ${foodLabel(food)}`;
+      if (isMeatOrFish(food)) return `100 g ${foodLabel(food)}`;
+      if (isLeafyOrVeg(food)) return `1 cup chopped ${foodLabel(food)}`;
+      if (isFruit(food)) return `1 medium ${foodLabel(food)}`;
+      if (isNutsOrSeeds(food)) return `2 tbsp ${foodLabel(food)}`;
       return `1 serving ${foodLabel(food)}`;
     }
 
@@ -265,6 +376,38 @@
       });
     }
 
+    function prepStep(food) {
+      if (isBread(food)) return `Toast ${portionHint(food)} until warm and lightly crisp.`;
+      if (isEgg(food)) return `Boil or scramble ${portionHint(food)} until fully cooked.`;
+      if (isLegume(food)) return `Boil ${portionHint(food)} with water until tender.`;
+      if (isGrainOrStarch(food)) return `Cook ${portionHint(food)} with water until soft.`;
+      if (isMeatOrFish(food)) return `Cook ${portionHint(food)} thoroughly in a pan or pot.`;
+      if (isLeafyOrVeg(food)) return `Wash and chop ${portionHint(food)}, then steam or saute for 3-5 minutes.`;
+      if (isFruit(food)) return `Wash and slice ${portionHint(food)} just before serving.`;
+      if (isNutsOrSeeds(food)) return `Add ${portionHint(food)} at the end as topping.`;
+      return `Prepare ${portionHint(food)} in your usual safe cooking method.`;
+    }
+
+    function finalServeStep(parts, base) {
+      const hasBreadFood = parts.some((food) => isBread(food));
+      const hasFruitFood = parts.some((food) => isFruit(food));
+      const cookableFoods = parts.filter((food) => !isBread(food) && !isFruit(food) && !isNutsOrSeeds(food));
+
+      if (hasBreadFood) {
+        return 'Use bread as a base or side. Add prepared foods on top or alongside instead of boiling or mixing bread.';
+      }
+
+      if (!isBread(base) && cookableFoods.length >= 2) {
+        return 'Combine the cooked items in one pan for 2-3 minutes, then serve warm.';
+      }
+
+      if (hasFruitFood) {
+        return 'Serve fruit on the side after the main meal for extra vitamins.';
+      }
+
+      return 'Plate the prepared foods together and serve immediately.';
+    }
+
     function buildRecipes(selectedFoods) {
       const carbFoods = selectedFoods.filter((food) => food.nutrients.includes('carbs'));
       const proteinFoods = selectedFoods.filter((food) => food.nutrients.includes('protein'));
@@ -281,20 +424,18 @@
         const key = parts.map((food) => food.id).sort().join('|');
         if (recipes.some((item) => item.key === key)) return;
 
-        const main = parts[0];
-        const second = parts[1] || parts[0];
-        const steps = [
-          `Cook ${portionHint(main)} until soft.`,
-          `Add ${portionHint(second)} and simmer for 10-12 minutes.`,
-          parts.length > 2 ? `Stir in ${portionHint(parts[2])} near the end to keep nutrients.` : 'Serve warm.'
-        ];
+        const base = parts.find((food) => isBread(food) || isGrainOrStarch(food) || isLegume(food)) || parts[0];
+        const rest = parts.filter((food) => food.id !== base.id);
+        const steps = [prepStep(base)];
+        rest.slice(0, 2).forEach((food) => steps.push(prepStep(food)));
+        steps.push(finalServeStep(parts, base));
 
         recipes.push({ key, name, ingredients: parts, benefit, steps });
       }
 
       if (carbFoods.length && proteinFoods.length && protectiveFoods.length) {
         addRecipe(
-          `${foodLabel(proteinFoods[0])} Power Bowl`,
+          `${foodLabel(proteinFoods[0])} Nourish Bowl`,
           [carbFoods[0], proteinFoods[0], protectiveFoods[0], flavorFoods[0]],
           'Balanced energy + protein + protective vitamins'
         );
@@ -326,7 +467,7 @@
 
       if (recipes.length < 3 && selectedFoods.length >= 2) {
         addRecipe(
-          `${foodLabel(selectedFoods[0])} & ${foodLabel(selectedFoods[1])} Quick Meal`,
+          `${foodLabel(selectedFoods[0])} and ${foodLabel(selectedFoods[1])} Home Plate`,
           [selectedFoods[0], selectedFoods[1], selectedFoods[2]],
           'Simple meal using what you already have'
         );
@@ -336,17 +477,17 @@
     }
 
     function analyzeFoods() {
-      const selectedFoods = foods.filter((food) => selectedFoodIds.has(food.id));
-      if (!selectedFoods.length) {
+      const selectedFoodList = [...selectedFoods.values()];
+      if (!selectedFoodList.length) {
         setStatus('Add at least one food before analysis.');
         resultShell.classList.add('hide');
         return;
       }
 
-      const mealIdeas = buildRecipes(selectedFoods);
+      const mealIdeas = buildRecipes(selectedFoodList);
 
       const nutrientToFoods = new Map();
-      selectedFoods.forEach((food) => {
+      selectedFoodList.forEach((food) => {
         food.nutrients.forEach((nutrient) => {
           if (!nutrientToFoods.has(nutrient)) nutrientToFoods.set(nutrient, new Set());
           nutrientToFoods.get(nutrient).add(foodLabel(food));
@@ -366,8 +507,9 @@
       const addons = [];
 
       if (missing.length) {
+        const selectedKnownIds = new Set(selectedFoodList.filter((food) => !food.custom).map((food) => food.id));
         const candidates = foods
-          .filter((food) => !selectedFoodIds.has(food.id))
+          .filter((food) => !selectedKnownIds.has(food.id))
           .map((food) => {
             const matches = [];
             food.nutrients.forEach((nutrient) => {
@@ -394,12 +536,12 @@
       listToUi(addonList, addons, 'No add-on suggestions.');
       resultShell.classList.remove('hide');
       hasAnalysis = true;
-      setStatus(`Analysis ready for ${selectedFoods.length} selected food(s).`);
+      setStatus(`Analysis ready for ${selectedFoodList.length} selected food(s).`);
     }
 
     addButton.addEventListener('click', addFood);
     clearButton.addEventListener('click', () => {
-      selectedFoodIds.clear();
+      selectedFoods.clear();
       hasAnalysis = false;
       input.value = '';
       clearAnalysisLists();
@@ -420,7 +562,7 @@
       if (!(target instanceof HTMLElement)) return;
       const removeId = target.dataset.removeFood;
       if (!removeId) return;
-      selectedFoodIds.delete(removeId);
+      selectedFoods.delete(removeId);
       hasAnalysis = false;
       resultShell.classList.add('hide');
       clearAnalysisLists();
