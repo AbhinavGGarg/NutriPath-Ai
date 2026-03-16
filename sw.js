@@ -1,5 +1,5 @@
-const CACHE_NAME = 'nutripath-v1';
-const STATIC_ASSETS = [
+const CACHE_NAME = 'nutripath-v3';
+const APP_SHELL = [
   './',
   './index.html',
   './assessment.html',
@@ -8,44 +8,90 @@ const STATIC_ASSETS = [
   './dashboard.html',
   './learn.html',
   './styles.css',
-  './app.js',
-  './data.js',
-  './assessment.js',
-  './results.js',
-  './map.js',
-  './dashboard.js',
-  './learn.js'
+  './app.js'
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
       )
-    )
+      .then(() => self.clients.claim())
   );
 });
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+async function cachePutIfOk(request, response) {
+  if (!response || !response.ok) return;
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(request, response.clone());
+}
+
+async function networkFirst(request, fallbackUrl) {
+  try {
+    const fresh = await fetch(request, { cache: 'no-store' });
+    cachePutIfOk(request, fresh.clone());
+    return fresh;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    if (fallbackUrl) {
+      const fallback = await caches.match(fallbackUrl);
+      if (fallback) return fallback;
+    }
+    throw new Error('Network and cache both unavailable');
+  }
+}
+
+async function staleWhileRevalidate(request) {
+  const cached = await caches.match(request);
+  const networkPromise = fetch(request)
+    .then((response) => {
+      cachePutIfOk(request, response.clone());
+      return response;
+    })
+    .catch(() => null);
+  return cached || networkPromise;
+}
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match('./index.html'));
-    })
-  );
+  const url = new URL(event.request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(networkFirst(event.request, './index.html'));
+    return;
+  }
+
+  if (!isSameOrigin) return;
+
+  const destination = event.request.destination;
+  if (destination === 'script' || destination === 'style' || destination === 'document') {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
+
+  event.respondWith(staleWhileRevalidate(event.request));
 });
