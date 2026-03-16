@@ -23,17 +23,17 @@
   });
 
   const map = L.map('resource-map').setView([18, 10], 2);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+  }).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19
   }).addTo(map);
   map.attributionControl.setPrefix('');
 
   const markerLayer = L.layerGroup().addTo(map);
   const hotspotLayer = L.layerGroup().addTo(map);
-  map.createPane('countryLabelsPane');
-  map.getPane('countryLabelsPane').style.zIndex = '350';
-  const countryLabelLayer = L.layerGroup().addTo(map);
 
   let mapCenter = null;
   let centerLabel = '';
@@ -43,56 +43,6 @@
     Clinic: { color: '#e63946', fillColor: '#ff6b74' },
     'Food Support': { color: '#f4b942', fillColor: '#ffd27a' },
     NGO: { color: '#0b3c5d', fillColor: '#4f8ab0' }
-  };
-
-  const countryIsoByName = {
-    Kenya: 'KE',
-    Uganda: 'UG',
-    Nigeria: 'NG',
-    Ghana: 'GH',
-    'South Africa': 'ZA',
-    Egypt: 'EG',
-    Morocco: 'MA',
-    Ethiopia: 'ET',
-    Tanzania: 'TZ',
-    Zambia: 'ZM',
-    Zimbabwe: 'ZW',
-    Mozambique: 'MZ',
-    Malawi: 'MW',
-    Bangladesh: 'BD',
-    India: 'IN',
-    Pakistan: 'PK',
-    Nepal: 'NP',
-    Indonesia: 'ID',
-    Philippines: 'PH',
-    Vietnam: 'VN',
-    Thailand: 'TH',
-    Cambodia: 'KH',
-    Malaysia: 'MY',
-    Singapore: 'SG',
-    China: 'CN',
-    Japan: 'JP',
-    'South Korea': 'KR',
-    Turkey: 'TR',
-    'Saudi Arabia': 'SA',
-    UAE: 'AE',
-    Jordan: 'JO',
-    'United Kingdom': 'GB',
-    France: 'FR',
-    Germany: 'DE',
-    Spain: 'ES',
-    Italy: 'IT',
-    Greece: 'GR',
-    'United States': 'US',
-    Canada: 'CA',
-    Mexico: 'MX',
-    Colombia: 'CO',
-    Peru: 'PE',
-    Brazil: 'BR',
-    Argentina: 'AR',
-    Chile: 'CL',
-    Australia: 'AU',
-    'New Zealand': 'NZ'
   };
 
   function t(key, vars) {
@@ -113,47 +63,6 @@
       .toLowerCase()
       .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim();
-  }
-
-  function getLocalizedCountryName(country) {
-    const lang = window.NutriApp?.getUiLanguage ? window.NutriApp.getUiLanguage() : 'en';
-    const isoCode = countryIsoByName[country];
-    if (!isoCode) return country;
-    try {
-      const display = new Intl.DisplayNames([lang], { type: 'region' });
-      return display.of(isoCode) || country;
-    } catch {
-      return country;
-    }
-  }
-
-  function renderCountryLabels() {
-    countryLabelLayer.clearLayers();
-
-    const byCountry = {};
-    Object.values(NutriData.communities).forEach((point) => {
-      if (!point?.country) return;
-      if (!byCountry[point.country]) {
-        byCountry[point.country] = { lat: 0, lng: 0, count: 0 };
-      }
-      byCountry[point.country].lat += point.lat;
-      byCountry[point.country].lng += point.lng;
-      byCountry[point.country].count += 1;
-    });
-
-    Object.entries(byCountry).forEach(([country, meta]) => {
-      const lat = meta.lat / meta.count;
-      const lng = meta.lng / meta.count;
-      const label = getLocalizedCountryName(country);
-      L.marker([lat, lng], {
-        pane: 'countryLabelsPane',
-        interactive: false,
-        icon: L.divIcon({
-          className: 'country-label',
-          html: `<span>${label}</span>`
-        })
-      }).addTo(countryLabelLayer);
-    });
   }
 
   function resolveCommunityInput(value) {
@@ -397,7 +306,6 @@
   });
 
   renderHotspots();
-  renderCountryLabels();
   applyFilters();
 
   window.addEventListener('nutri:lang-changed', () => {
@@ -407,7 +315,6 @@
     }
     updateDistanceLabel();
     renderHotspots();
-    renderCountryLabels();
     applyFilters();
   });
 

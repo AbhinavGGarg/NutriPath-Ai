@@ -4,6 +4,7 @@
   if (yearNode) yearNode.textContent = String(new Date().getFullYear());
 
   const UI_LANG_KEY = 'nutriUiLangV1';
+  const UI_LANG_CONFIRMED_KEY = 'nutriUiLangConfirmedV2';
   const STORAGE_KEYS = {
     accounts: 'nutriAccountsV1',
     sessionUserId: 'nutriSessionUserIdV1',
@@ -7017,8 +7018,11 @@
     },
   };
 
-  let currentLang = localStorage.getItem(UI_LANG_KEY) || 'en';
+  const storedLang = localStorage.getItem(UI_LANG_KEY) || 'en';
+  const hasConfirmedLanguage = localStorage.getItem(UI_LANG_CONFIRMED_KEY) === '1';
+  let currentLang = hasConfirmedLanguage ? storedLang : 'en';
   if (!I18N[currentLang] || !UI_LANGS.some((lang) => lang.code === currentLang)) currentLang = 'en';
+  localStorage.setItem(UI_LANG_KEY, currentLang);
 
   function parseJSON(raw, fallback) {
     try {
@@ -7245,10 +7249,12 @@
       return currentLang;
     },
 
-    setUiLanguage(lang) {
+    setUiLanguage(lang, options = {}) {
       const next = I18N[lang] ? lang : 'en';
+      const shouldConfirm = options.confirm !== false;
       currentLang = next;
       localStorage.setItem(UI_LANG_KEY, next);
+      if (shouldConfirm) localStorage.setItem(UI_LANG_CONFIRMED_KEY, '1');
       applyGlobalUi();
       window.dispatchEvent(new CustomEvent('nutri:lang-changed', { detail: { lang: next } }));
       return next;
