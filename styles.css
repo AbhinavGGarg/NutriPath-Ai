@@ -433,6 +433,13 @@ textarea:focus {
   border: 1px solid rgba(11, 60, 93, 0.08);
 }
 
+#resource-map .leaflet-control-attribution {
+  font-size: 0.66rem;
+  background: rgba(255, 255, 255, 0.72);
+  color: #355266;
+  padding: 0.12rem 0.4rem;
+}
+
 .resource-list {
   display: grid;
   gap: 0.6rem;

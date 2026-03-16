@@ -301,3 +301,80 @@ window.NutriData = {
     }
   ]
 };
+
+// Generate a larger global resource network from known communities so the map
+// feels realistic for broad coverage during demo and filtering.
+(function expandResourceNetwork() {
+  const source = window.NutriData;
+  if (!source || !source.communities || !Array.isArray(source.resources)) return;
+
+  const templates = [
+    {
+      type: "Clinic",
+      title: "Community Nutrition Clinic",
+      services: ["MUAC screening", "Growth monitoring", "Pediatric consult"],
+      open: "Mon-Sat 08:00-17:00"
+    },
+    {
+      type: "Food Support",
+      title: "Family Food Distribution Point",
+      services: ["Staple rations", "Fortified cereal", "Voucher support"],
+      open: "Mon-Fri 09:00-16:00"
+    },
+    {
+      type: "NGO",
+      title: "Maternal & Child Nutrition Desk",
+      services: ["Counseling", "Referral coordination", "Home-visit enrollment"],
+      open: "Daily 09:00-18:00"
+    },
+    {
+      type: "Clinic",
+      title: "Child Health Stabilization Unit",
+      services: ["Acute malnutrition triage", "Therapeutic feeding", "Follow-up checks"],
+      open: "Mon-Sat 07:30-18:00"
+    },
+    {
+      type: "Food Support",
+      title: "Community Kitchen & Pantry Hub",
+      services: ["Cooked meal support", "Protein packs", "Micronutrient blends"],
+      open: "Daily 07:00-14:00"
+    },
+    {
+      type: "NGO",
+      title: "Nutrition Outreach Center",
+      services: ["Breastfeeding support", "WASH guidance", "Risk case navigation"],
+      open: "Mon-Sat 08:30-17:30"
+    }
+  ];
+
+  const seedNoise = (seed, scale) => {
+    const x = Math.sin(seed * 9999) * 10000;
+    const n = x - Math.floor(x);
+    return (n * 2 - 1) * scale;
+  };
+
+  const existingIds = new Set(source.resources.map((item) => item.id));
+  const generated = [];
+  const communityEntries = Object.entries(source.communities);
+
+  communityEntries.forEach(([communityName, point], idx) => {
+    for (let j = 0; j < 3; j += 1) {
+      const template = templates[(idx + j * 2) % templates.length];
+      const id = `res-auto-${idx}-${j}`;
+      if (existingIds.has(id)) continue;
+
+      generated.push({
+        id,
+        name: `${communityName} ${template.title}`,
+        type: template.type,
+        lat: Number((point.lat + seedNoise(idx * 13 + j + 1, 0.23)).toFixed(5)),
+        lng: Number((point.lng + seedNoise(idx * 17 + j + 1, 0.23)).toFixed(5)),
+        services: template.services,
+        open: template.open
+      });
+      existingIds.add(id);
+    }
+  });
+
+  source.resources = [...source.resources, ...generated];
+})();

@@ -27,6 +27,7 @@
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
+  map.attributionControl.setPrefix('');
 
   const markerLayer = L.layerGroup().addTo(map);
   const hotspotLayer = L.layerGroup().addTo(map);
@@ -34,6 +35,12 @@
   let mapCenter = null;
   let centerLabel = '';
   let usingCurrentLocation = false;
+
+  const markerStyleByType = {
+    Clinic: { color: '#e63946', fillColor: '#ff6b74' },
+    'Food Support': { color: '#f4b942', fillColor: '#ffd27a' },
+    NGO: { color: '#0b3c5d', fillColor: '#4f8ab0' }
+  };
 
   function normalizeText(value) {
     return String(value || '')
@@ -128,6 +135,14 @@
       .bindPopup(centerLabel || 'Selected center');
   }
 
+  function buildSummaryByType(list) {
+    const counts = { Clinic: 0, 'Food Support': 0, NGO: 0 };
+    list.forEach((item) => {
+      if (counts[item.type] !== undefined) counts[item.type] += 1;
+    });
+    return `Clinics: ${counts.Clinic} · Food support: ${counts['Food Support']} · NGO: ${counts.NGO}`;
+  }
+
   function applyFilters() {
     const type = typeSelect.value;
     const maxDistance = Number(distanceRange.value);
@@ -183,7 +198,14 @@
     drawCenterMarker();
 
     filtered.forEach((resource) => {
-      const marker = L.marker([resource.lat, resource.lng]).addTo(markerLayer);
+      const style = markerStyleByType[resource.type] || { color: '#17a398', fillColor: '#17a398' };
+      const marker = L.circleMarker([resource.lat, resource.lng], {
+        radius: 7,
+        weight: 2,
+        color: style.color,
+        fillColor: style.fillColor,
+        fillOpacity: 0.85
+      }).addTo(markerLayer);
       const distanceText = mapCenter ? `${resource.distance.toFixed(1)} km away` : 'Distance available after selecting a community';
 
       marker.bindPopup(`<strong>${resource.name}</strong><br/>${resource.type}<br/>${distanceText}<br/>${resource.open}`);
@@ -204,9 +226,9 @@
     });
 
     if (mapCenter) {
-      renderStatus(`Applied: ${filtered.length} resource(s) within ${maxDistance} km of ${centerLabel}.`);
+      renderStatus(`Applied: ${filtered.length} resource(s) within ${maxDistance} km of ${centerLabel}. ${buildSummaryByType(filtered)}`);
     } else {
-      renderStatus(`Applied: ${filtered.length} resource(s) globally. Select a community to enable distance filtering.`);
+      renderStatus(`Applied: ${filtered.length} resource(s) globally. ${buildSummaryByType(filtered)}. Select a community to enable distance filtering.`);
     }
   }
 
