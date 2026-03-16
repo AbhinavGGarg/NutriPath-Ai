@@ -288,6 +288,12 @@ h4 {
   color: var(--primary);
 }
 
+.required-field-label::after {
+  content: " *";
+  color: #e63946;
+  font-weight: 800;
+}
+
 input,
 select,
 textarea {

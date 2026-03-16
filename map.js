@@ -46,6 +46,7 @@
   let countryDataLoaded = false;
   let filterRunId = 0;
   const geocodeCache = new Map();
+  const nearestFallbackLimit = 120;
 
   const markerStyleByType = {
     Clinic: { color: '#e63946', fillColor: '#ff6b74' },
@@ -336,7 +337,7 @@
       }
     }
 
-    const filtered = NutriData.resources
+    const typeFiltered = NutriData.resources
       .map((resource) => {
         const distance = mapCenter
           ? NutriApp.haversineKm(mapCenter.lat, mapCenter.lng, resource.lat, resource.lng)
@@ -344,11 +345,21 @@
         return { ...resource, distance };
       })
       .filter((resource) => (type === 'All' ? true : resource.type === type))
-      .filter((resource) => (mapCenter ? resource.distance <= maxDistance : true))
       .sort((a, b) => {
-        if (mapCenter) return a.distance - b.distance;
+        if (mapCenter) return (a.distance ?? Infinity) - (b.distance ?? Infinity);
         return a.name.localeCompare(b.name);
       });
+
+    let filtered = mapCenter
+      ? typeFiltered.filter((resource) => resource.distance <= maxDistance)
+      : typeFiltered;
+
+    const usedNearestFallback = Boolean(mapCenter && !filtered.length && typeFiltered.length);
+    if (usedNearestFallback) {
+      filtered = typeFiltered.slice(0, nearestFallbackLimit);
+    }
+
+    drawCenterMarker();
 
     if (filtered.length === 0) {
       const noDataMessage = mapCenter
@@ -360,8 +371,6 @@
       }
       return;
     }
-
-    drawCenterMarker();
 
     filtered.forEach((resource) => {
       const style = markerStyleByType[resource.type] || { color: '#17a398', fillColor: '#17a398' };
@@ -393,6 +402,16 @@
       });
       resourceList.appendChild(node);
     });
+
+    if (mapCenter && usedNearestFallback) {
+      const bounds = L.latLngBounds([[mapCenter.lat, mapCenter.lng]]);
+      filtered.slice(0, 20).forEach((resource) => {
+        bounds.extend([resource.lat, resource.lng]);
+      });
+      if (bounds.isValid()) {
+        map.fitBounds(bounds.pad(0.25));
+      }
+    }
 
     if (mapCenter) {
       renderStatus(

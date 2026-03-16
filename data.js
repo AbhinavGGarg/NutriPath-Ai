@@ -358,8 +358,8 @@ window.NutriData = {
   const communityEntries = Object.entries(source.communities);
 
   communityEntries.forEach(([communityName, point], idx) => {
-    for (let j = 0; j < 3; j += 1) {
-      const template = templates[(idx + j * 2) % templates.length];
+    for (let j = 0; j < 6; j += 1) {
+      const template = templates[(idx + j) % templates.length];
       const id = `res-auto-${idx}-${j}`;
       if (existingIds.has(id)) continue;
 

@@ -46,7 +46,7 @@
           <h3 data-i18n="assessment_section_profile">1) Profile</h3>
           <div class="form-grid">
             <div class="field">
-              <label for="role" data-i18n="assessment_label_role">Role</label>
+              <label for="role" class="required-field-label" data-i18n="assessment_label_role">Role</label>
               <select id="role" name="role" required>
                 <option value="" data-i18n="assessment_option_select_role">Select role</option>
                 <option data-i18n="assessment_role_individual">Individual / Family Member</option>
@@ -57,27 +57,27 @@
               <span class="field-hint" data-i18n="assessment_role_hint">Everyone can use this tool. Choose the role closest to you.</span>
             </div>
             <div class="field">
-              <label for="language" data-i18n="assessment_label_language">Preferred language</label>
+              <label for="language" class="required-field-label" data-i18n="assessment_label_language">Preferred language</label>
               <input id="language" name="language" list="language-options" placeholder="Search or type language" data-i18n-placeholder="assessment_placeholder_language" required />
               <datalist id="language-options"></datalist>
               <span class="field-hint" data-i18n="assessment_language_hint">Search by language name or type manually.</span>
             </div>
             <div class="field">
-              <label for="householdName" data-i18n="assessment_label_household">Family name or reference</label>
+              <label for="householdName" class="required-field-label" data-i18n="assessment_label_household">Family name or reference</label>
               <input id="householdName" name="householdName" placeholder="e.g., Family Patel or Home 102" data-i18n-placeholder="assessment_placeholder_household" required />
             </div>
             <div class="field">
-              <label for="community" data-i18n="assessment_label_community">Community</label>
+              <label for="community" class="required-field-label" data-i18n="assessment_label_community">Community</label>
               <input id="community" name="community" list="community-options" placeholder="Select or search community" data-i18n-placeholder="placeholder_community_search" required />
               <datalist id="community-options"></datalist>
               <span class="field-hint" data-i18n="assessment_community_hint">Works with search and manual entry.</span>
             </div>
             <div class="field">
-              <label for="ageYears" data-i18n="assessment_label_age">Age (years)</label>
+              <label for="ageYears" class="required-field-label" data-i18n="assessment_label_age">Age (years)</label>
               <input id="ageYears" name="ageYears" type="number" min="0" max="120" step="1" placeholder="e.g., 18" data-i18n-placeholder="assessment_placeholder_age" required />
             </div>
             <div class="field">
-              <label for="sex" data-i18n="assessment_label_sex">Sex</label>
+              <label for="sex" class="required-field-label" data-i18n="assessment_label_sex">Sex</label>
               <select id="sex" name="sex" required>
                 <option value="" data-i18n="assessment_option_select_sex">Select sex</option>
                 <option data-i18n="assessment_option_female">Female</option>
@@ -85,11 +85,11 @@
               </select>
             </div>
             <div class="field">
-              <label for="householdSize" data-i18n="assessment_label_household_size">Number of people in home</label>
+              <label for="householdSize" class="required-field-label" data-i18n="assessment_label_household_size">Number of people in home</label>
               <input id="householdSize" name="householdSize" type="number" min="1" max="20" required />
             </div>
             <div class="field">
-              <label for="weeklyBudget" data-i18n="assessment_label_budget">Food budget (USD/week)</label>
+              <label for="weeklyBudget" class="required-field-label" data-i18n="assessment_label_budget">Food budget (USD/week)</label>
               <input id="weeklyBudget" name="weeklyBudget" type="number" min="1" max="500" required />
             </div>
           </div>
@@ -97,27 +97,27 @@
           <h3 data-i18n="assessment_section_health">2) Health and Growth</h3>
           <div class="form-grid">
             <div class="field">
-              <label for="weight" data-i18n="assessment_label_weight">Weight (kg)</label>
+              <label for="weight" class="required-field-label" data-i18n="assessment_label_weight">Weight (kg)</label>
               <input id="weight" name="weight" type="number" step="0.1" min="1" max="150" required />
             </div>
             <div class="field">
-              <label for="height" data-i18n="assessment_label_height">Height (cm)</label>
+              <label for="height" class="required-field-label" data-i18n="assessment_label_height">Height (cm)</label>
               <input id="height" name="height" type="number" step="0.1" min="30" max="220" required />
             </div>
             <div class="field">
               <label for="muac" data-i18n="assessment_label_muac">MUAC (Mid-Upper Arm Circumference, cm)</label>
-              <input id="muac" name="muac" type="number" step="0.1" min="8" max="35" required />
+              <input id="muac" name="muac" type="number" step="0.1" min="8" max="35" />
             </div>
             <div class="field">
-              <label for="mealsPerDay" data-i18n="assessment_label_meals">Meals per day</label>
+              <label for="mealsPerDay" class="required-field-label" data-i18n="assessment_label_meals">Meals per day</label>
               <input id="mealsPerDay" name="mealsPerDay" type="number" min="1" max="8" required />
             </div>
             <div class="field">
-              <label for="dietDiversity" data-i18n="assessment_label_diversity">Diet diversity score (0-10)</label>
+              <label for="dietDiversity" class="required-field-label" data-i18n="assessment_label_diversity">Diet diversity score (0-10)</label>
               <input id="dietDiversity" name="dietDiversity" type="number" min="0" max="10" required />
             </div>
             <div class="field">
-              <label for="waterSource" data-i18n="assessment_label_water">Water source</label>
+              <label for="waterSource" class="required-field-label" data-i18n="assessment_label_water">Water source</label>
               <select id="waterSource" name="waterSource" required>
                 <option value="" data-i18n="assessment_option_select_source">Select source</option>
                 <option value="safe" data-i18n="assessment_option_safe_water">Safe (treated/piped)</option>
@@ -126,10 +126,10 @@
             </div>
           </div>
 
-          <h3 data-i18n="assessment_section_symptoms">3) Symptoms (select all that apply)</h3>
+          <h3 class="required-field-label" data-i18n="assessment_section_symptoms">3) Symptoms (select all that apply)</h3>
           <div class="checkbox-grid" id="symptom-list"></div>
 
-          <h3 data-i18n="assessment_section_foods">4) Available local foods</h3>
+          <h3 class="required-field-label" data-i18n="assessment_section_foods">4) Available local foods</h3>
           <p class="small-text" data-i18n="assessment_food_desc">Choose foods currently available in the household or local market.</p>
           <div class="field search-row">
             <label for="food-search" data-i18n="assessment_label_food_search">Food search</label>

@@ -104,7 +104,6 @@
     'weeklyBudget',
     'weight',
     'height',
-    'muac',
     'mealsPerDay',
     'dietDiversity',
     'waterSource'
@@ -449,9 +448,11 @@
   function computeRisk(payload, selectedSymptoms, selectedFoods) {
     let risk = 8;
 
-    if (payload.muac < 11.5) risk += 38;
-    else if (payload.muac < 12.5) risk += 27;
-    else if (payload.muac < 13.5) risk += 12;
+    if (Number.isFinite(payload.muac) && payload.muac > 0) {
+      if (payload.muac < 11.5) risk += 38;
+      else if (payload.muac < 12.5) risk += 27;
+      else if (payload.muac < 13.5) risk += 12;
+    }
 
     const bmi = payload.weight / ((payload.height / 100) * (payload.height / 100));
     if (payload.ageYears <= 5) {
@@ -553,7 +554,7 @@
       weeklyBudget: Number(form.weeklyBudget.value),
       weight: Number(form.weight.value),
       height: Number(form.height.value),
-      muac: Number(form.muac.value),
+      muac: String(form.muac.value || '').trim() ? Number(form.muac.value) : null,
       mealsPerDay: Number(form.mealsPerDay.value),
       dietDiversity: Number(form.dietDiversity.value),
       waterSource: form.waterSource.value,
