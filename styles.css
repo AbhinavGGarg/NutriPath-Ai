@@ -523,6 +523,47 @@ textarea:focus {
   background: #fff;
 }
 
+.selected-foods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+}
+
+.selected-food-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(11, 60, 93, 0.12);
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  background: rgba(23, 163, 152, 0.08);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.selected-food-chip button {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0;
+}
+
+#hub-food-results .card {
+  box-shadow: none;
+}
+
+#hub-food-results ul {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
 .footer {
   padding: 1.4rem 0 2rem;
   color: var(--ink-soft);
