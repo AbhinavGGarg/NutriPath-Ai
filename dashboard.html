@@ -7,7 +7,7 @@
     <title>NutriPath AI | Program Dashboard</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-page="dashboard">
+  <body data-page="dashboard" data-title-key="title_dashboard">
     <header class="topbar">
       <div class="container nav">
         <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath AI</span></a>
@@ -24,38 +24,38 @@
 
     <main class="container">
       <section class="page-header">
-        <h1 class="page-title">Program Dashboard (CHW/NGO)</h1>
-        <p class="page-desc">Track risk trends, identify hotspots, and prioritize follow-up outreach. Individuals and families can continue using the assessment and results pages directly.</p>
+        <h1 class="page-title" data-i18n="dashboard_title">Program Dashboard (CHW/NGO)</h1>
+        <p class="page-desc" data-i18n="dashboard_desc">Track risk trends, identify hotspots, and prioritize follow-up outreach. Individuals and families can continue using the assessment and results pages directly.</p>
       </section>
 
       <section class="section metric-grid">
-        <article class="metric"><span>Total assessments</span><strong id="m-total">0</strong></article>
-        <article class="metric"><span>High or urgent</span><strong id="m-critical">0</strong></article>
-        <article class="metric"><span>Follow-ups due this week</span><strong id="m-follow">0</strong></article>
-        <article class="metric"><span>Avg risk score</span><strong id="m-avg">0</strong></article>
+        <article class="metric"><span data-i18n="dashboard_metric_total">Total assessments</span><strong id="m-total">0</strong></article>
+        <article class="metric"><span data-i18n="dashboard_metric_critical">High or urgent</span><strong id="m-critical">0</strong></article>
+        <article class="metric"><span data-i18n="dashboard_metric_follow">Follow-ups due this week</span><strong id="m-follow">0</strong></article>
+        <article class="metric"><span data-i18n="dashboard_metric_avg">Avg risk score</span><strong id="m-avg">0</strong></article>
       </section>
 
       <section class="section grid-2">
         <article class="card">
-          <h3>Risk Distribution</h3>
+          <h3 data-i18n="dashboard_risk_distribution">Risk Distribution</h3>
           <canvas id="risk-chart" height="220"></canvas>
         </article>
         <article class="card">
-          <h3>Community Hotspots</h3>
+          <h3 data-i18n="dashboard_hotspots">Community Hotspots</h3>
           <canvas id="hotspot-chart" height="220"></canvas>
         </article>
       </section>
 
       <section class="section grid-2">
         <article class="card">
-          <h3>Recent Cases</h3>
+          <h3 data-i18n="dashboard_recent_cases">Recent Cases</h3>
           <table class="table" id="recent-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Household</th>
-                <th>Community</th>
-                <th>Risk</th>
+                <th data-i18n="dashboard_head_date">Date</th>
+                <th data-i18n="dashboard_head_household">Household</th>
+                <th data-i18n="dashboard_head_community">Community</th>
+                <th data-i18n="dashboard_head_risk">Risk</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -63,17 +63,17 @@
         </article>
 
         <article class="card">
-          <h3>Action Queue</h3>
+          <h3 data-i18n="dashboard_action_queue">Action Queue</h3>
           <div id="action-queue"></div>
           <div class="cta-row" style="margin-top: 0.8rem;">
-            <a class="btn btn-primary" href="./assessment.html">Add New Screening</a>
-            <button class="btn btn-secondary" id="seed-demo" type="button">Load Demo Data</button>
+            <a class="btn btn-primary" href="./assessment.html" data-i18n="dashboard_add_screening">Add New Screening</a>
+            <button class="btn btn-secondary" id="seed-demo" type="button" data-i18n="dashboard_load_demo">Load Demo Data</button>
           </div>
         </article>
       </section>
     </main>
 
-    <footer class="container footer">NutriPath AI for Fuel the Future Hackathon · <span id="year"></span></footer>
+    <footer class="container footer"><span data-i18n="footer_prefix">NutriPath AI for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="./data.js"></script>

@@ -16,7 +16,7 @@
     langs.forEach((lang) => {
       const option = document.createElement('option');
       option.value = lang.code;
-      option.textContent = lang.label;
+      option.textContent = lang.labelKey ? NutriApp.t(lang.labelKey) : lang.label;
       if (lang.code === current) option.selected = true;
       select.appendChild(option);
     });

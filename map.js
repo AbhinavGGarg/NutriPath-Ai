@@ -46,6 +46,14 @@
     return window.NutriApp?.t ? window.NutriApp.t(key, vars) : key;
   }
 
+  function resourceTypeLabel(type) {
+    return window.NutriApp?.getResourceTypeLabel ? window.NutriApp.getResourceTypeLabel(type) : type;
+  }
+
+  function updateDistanceLabel() {
+    distanceLabel.textContent = t('map_distance_value', { distance: distanceRange.value });
+  }
+
   function normalizeText(value) {
     return String(value || '')
       .trim()
@@ -118,7 +126,7 @@
         fillOpacity: 0.22,
         radius: 250 + stats.count * 120
       })
-        .bindPopup(`${stats.label}<br/>High-risk cases: ${stats.count}`)
+        .bindPopup(`${stats.label}<br/>${t('map_hotspot_cases', { count: stats.count })}`)
         .addTo(hotspotLayer);
     });
   }
@@ -136,7 +144,7 @@
       fillOpacity: 0.9
     })
       .addTo(markerLayer)
-      .bindPopup(centerLabel || 'Selected center');
+      .bindPopup(centerLabel || t('map_selected_center'));
   }
 
   function buildSummaryByType(list) {
@@ -215,17 +223,18 @@
         fillColor: style.fillColor,
         fillOpacity: 0.85
       }).addTo(markerLayer);
+      const typeLabel = resourceTypeLabel(resource.type);
       const distanceText = mapCenter
         ? t('map_distance_away', { distance: resource.distance.toFixed(1) })
         : t('map_distance_pending');
 
-      marker.bindPopup(`<strong>${resource.name}</strong><br/>${resource.type}<br/>${distanceText}<br/>${resource.open}`);
+      marker.bindPopup(`<strong>${resource.name}</strong><br/>${typeLabel}<br/>${distanceText}<br/>${resource.open}`);
 
       const node = document.createElement('article');
       node.className = 'resource-item';
       node.innerHTML = `
         <strong>${resource.name}</strong>
-        <div><span class="tag">${resource.type}</span> <span class="small-text">${distanceText}</span></div>
+        <div><span class="tag">${typeLabel}</span> <span class="small-text">${distanceText}</span></div>
         <div class="small-text">${resource.services.join(' · ')}</div>
         <div class="small-text">${resource.open}</div>
       `;
@@ -255,9 +264,7 @@
     }
   }
 
-  distanceRange.addEventListener('input', () => {
-    distanceLabel.textContent = `${distanceRange.value} km`;
-  });
+  distanceRange.addEventListener('input', updateDistanceLabel);
 
   applyButton.addEventListener('click', applyFilters);
 
@@ -303,6 +310,10 @@
       centerLabel = t('current_location');
       communityInput.value = t('current_location');
     }
+    updateDistanceLabel();
+    renderHotspots();
     applyFilters();
   });
+
+  updateDistanceLabel();
 })();

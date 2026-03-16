@@ -3,16 +3,44 @@
   const grid = document.getElementById('lesson-grid');
   if (!grid) return;
 
+  const localizedLessons = new Map();
+
+  function localizedValue(key, fallback) {
+    if (window.NutriApp?.hasTranslation && window.NutriApp.hasTranslation(key)) {
+      return t(key);
+    }
+    return fallback;
+  }
+
+  function levelKey(level) {
+    const normalized = String(level || '').trim().toLowerCase();
+    const map = {
+      beginner: 'lesson_level_beginner',
+      essential: 'lesson_level_essential',
+      intermediate: 'lesson_level_intermediate'
+    };
+    return map[normalized] || '';
+  }
+
   NutriData.lessons.forEach((lesson) => {
+    const num = String(lesson.id || '').replace('lesson-', '');
+    const localized = {
+      title: localizedValue(`lesson_${num}_title`, lesson.title),
+      content: localizedValue(`lesson_${num}_content`, lesson.content),
+      quickTip: localizedValue(`lesson_${num}_tip`, lesson.quickTip),
+      level: localizedValue(levelKey(lesson.level), lesson.level)
+    };
+    localizedLessons.set(lesson.id, localized);
+
     const node = document.createElement('article');
     node.className = 'lesson-card';
     node.innerHTML = `
-      <span class="badge">${lesson.level}</span>
-      <h3>${lesson.title}</h3>
-      <p class="small-text">${lesson.content}</p>
-      <div class="alert alert-warn">${lesson.quickTip}</div>
+      <span class="badge">${localized.level}</span>
+      <h3>${localized.title}</h3>
+      <p class="small-text">${localized.content}</p>
+      <div class="alert alert-warn">${localizedValue('learn_quick_tip_prefix', 'Quick tip')}: ${localized.quickTip}</div>
       <div class="cta-row" style="margin-top: 0.7rem;">
-        <button type="button" class="btn btn-secondary" data-speak="${lesson.id}">Listen</button>
+        <button type="button" class="btn btn-secondary" data-speak="${lesson.id}">${t('learn_btn_listen')}</button>
       </div>
     `;
     grid.appendChild(node);
@@ -24,9 +52,15 @@
     const id = target.dataset.speak;
     if (!id) return;
 
-    const lesson = NutriData.lessons.find((item) => item.id === id);
+    const lesson = localizedLessons.get(id);
     if (!lesson) return;
-    NutriApp.speak(`${lesson.title}. ${lesson.content}. Quick tip: ${lesson.quickTip}.`);
+    NutriApp.speak(
+      t('learn_speak_lesson', {
+        title: lesson.title,
+        content: lesson.content,
+        tip: lesson.quickTip
+      })
+    );
   });
 
   const feedback = document.getElementById('quiz-feedback');
@@ -44,10 +78,10 @@
   });
 
   document.getElementById('speak-warning').addEventListener('click', () => {
-    NutriApp.speak('Early warning signs include poor appetite, repeated diarrhea, visible wasting, and lethargy. Refer urgent signs immediately.');
+    NutriApp.speak(t('learn_speak_warning'));
   });
 
   document.getElementById('speak-meal').addEventListener('click', () => {
-    NutriApp.speak('Build each meal with one energy food, one protein food, and one vitamin rich food. Use local affordable ingredients.');
+    NutriApp.speak(t('learn_speak_meal'));
   });
 })();

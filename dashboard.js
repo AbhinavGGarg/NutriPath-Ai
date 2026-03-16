@@ -1,5 +1,6 @@
 (function () {
   const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
+  const riskLabel = (category) => (window.NutriApp?.getRiskLabel ? window.NutriApp.getRiskLabel(category) : category);
   const metricTotal = document.getElementById('m-total');
   const metricCritical = document.getElementById('m-critical');
   const metricFollow = document.getElementById('m-follow');
@@ -24,7 +25,7 @@
     riskChart = new Chart(document.getElementById('risk-chart'), {
       type: 'doughnut',
       data: {
-        labels: ['Low', 'Moderate', 'High', 'Urgent'],
+        labels: [t('risk_label_low'), t('risk_label_moderate'), t('risk_label_high'), t('risk_label_urgent')],
         datasets: [
           {
             data: [counts.Low, counts.Moderate, counts.High, counts.Urgent],
@@ -52,7 +53,7 @@
         labels: hotspotEntries.map((entry) => entry[0]),
         datasets: [
           {
-            label: 'High/Urgent cases',
+            label: t('dashboard_hotspot_label'),
             data: hotspotEntries.map((entry) => entry[1]),
             backgroundColor: '#17a398'
           }
@@ -90,11 +91,14 @@
     recentBody.innerHTML = '';
     history.slice(0, 10).forEach((entry) => {
       const row = document.createElement('tr');
+      const household = entry.payload?.householdName || t('common_na');
+      const community = entry.payload?.community || t('common_na');
+      const category = entry.riskOutput?.category || 'Low';
       row.innerHTML = `
         <td>${NutriApp.formatDate(entry.createdAt)}</td>
-        <td>${entry.payload?.householdName || 'N/A'}</td>
-        <td>${entry.payload?.community || 'N/A'}</td>
-        <td><span class="tag">${entry.riskOutput?.category || 'Unknown'} (${entry.riskOutput?.risk || '-'})</span></td>
+        <td>${household}</td>
+        <td>${community}</td>
+        <td><span class="tag">${riskLabel(category)} (${entry.riskOutput?.risk || '-'})</span></td>
       `;
       recentBody.appendChild(row);
     });
@@ -114,10 +118,11 @@
       queue.forEach((entry) => {
         const node = document.createElement('div');
         node.className = 'resource-item';
+        const category = entry.riskOutput?.category || 'Low';
         node.innerHTML = `
           <strong>${entry.payload?.householdName}</strong>
-          <div class="small-text">${entry.payload?.community} · ${entry.riskOutput?.category} (${entry.riskOutput?.risk})</div>
-          <div class="small-text">Follow-up due in ${entry.followUpDue} day(s)</div>
+          <div class="small-text">${entry.payload?.community || t('common_na')} · ${riskLabel(category)} (${entry.riskOutput?.risk})</div>
+          <div class="small-text">${t('results_followup', { days: entry.followUpDue })}</div>
         `;
         actionQueue.appendChild(node);
       });
@@ -153,7 +158,7 @@
         riskOutput: {
           category,
           risk: scoreByCategory[category],
-          actions: ['Demo action 1', 'Demo action 2']
+          actions: [t('dashboard_demo_action_1'), t('dashboard_demo_action_2')]
         },
         deficiencies: defA,
         mealPlan: { days: [], budgetRisk: 'moderate' },

@@ -7,7 +7,7 @@
     <title>NutriPath AI | Learning Hub</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-page="learn">
+  <body data-page="learn" data-title-key="title_learn">
     <header class="topbar">
       <div class="container nav">
         <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath AI</span></a>
@@ -24,40 +24,40 @@
 
     <main class="container">
       <section class="page-header">
-        <h1 class="page-title">Nutrition Learning Hub</h1>
-        <p class="page-desc">Short, practical, low-literacy lessons that individuals, families, caregivers, and CHWs can apply immediately.</p>
+        <h1 class="page-title" data-i18n="learn_title">Nutrition Learning Hub</h1>
+        <p class="page-desc" data-i18n="learn_desc">Short, practical, low-literacy lessons that individuals, families, caregivers, and CHWs can apply immediately.</p>
       </section>
 
       <section class="section lesson-grid" id="lesson-grid"></section>
 
       <section class="section grid-2">
         <article class="card">
-          <h3>Myth vs Fact Quick Check</h3>
+          <h3 data-i18n="learn_quiz_title">Myth vs Fact Quick Check</h3>
           <div id="quiz-shell">
-            <p><strong>Myth:</strong> "Only expensive foods can prevent malnutrition."</p>
+            <p><strong data-i18n="learn_myth_label">Myth:</strong> <span data-i18n="learn_myth_text">"Only expensive foods can prevent malnutrition."</span></p>
             <div class="cta-row">
-              <button type="button" class="btn btn-secondary" data-answer="myth">Myth</button>
-              <button type="button" class="btn btn-secondary" data-answer="fact">Fact</button>
+              <button type="button" class="btn btn-secondary" data-answer="myth" data-i18n="learn_btn_myth">Myth</button>
+              <button type="button" class="btn btn-secondary" data-answer="fact" data-i18n="learn_btn_fact">Fact</button>
             </div>
             <p id="quiz-feedback" class="small-text"></p>
           </div>
         </article>
 
         <article class="card">
-          <h3>Audio Assistant</h3>
-          <p class="small-text">Tap to hear key guidance in plain language during field visits.</p>
+          <h3 data-i18n="learn_audio_title">Audio Assistant</h3>
+          <p class="small-text" data-i18n="learn_audio_desc">Tap to hear key guidance in plain language during field visits.</p>
           <div class="cta-row">
-            <button id="speak-warning" class="btn btn-secondary" type="button">Read warning signs</button>
-            <button id="speak-meal" class="btn btn-secondary" type="button">Read meal tips</button>
+            <button id="speak-warning" class="btn btn-secondary" type="button" data-i18n="learn_btn_warning">Read warning signs</button>
+            <button id="speak-meal" class="btn btn-secondary" type="button" data-i18n="learn_btn_meal">Read meal tips</button>
           </div>
-          <div class="alert alert-success" style="margin-top: 0.9rem;">
+          <div class="alert alert-success" style="margin-top: 0.9rem;" data-i18n="learn_alert_tip">
             Keep instructions short, visual, and repeated during follow-ups for better adoption.
           </div>
         </article>
       </section>
     </main>
 
-    <footer class="container footer">NutriPath AI for Fuel the Future Hackathon · <span id="year"></span></footer>
+    <footer class="container footer"><span data-i18n="footer_prefix">NutriPath AI for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
 
     <script src="./data.js"></script>
     <script src="./app.js"></script>

@@ -1,5 +1,9 @@
 (function () {
   const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
+  const riskLabel = (category) => (window.NutriApp?.getRiskLabel ? window.NutriApp.getRiskLabel(category) : category);
+  const resourceTypeLabel = (type) => (window.NutriApp?.getResourceTypeLabel ? window.NutriApp.getResourceTypeLabel(type) : type);
+  const nutrientLabel = (name) => (window.NutriApp?.getNutrientLabel ? window.NutriApp.getNutrientLabel(name) : name);
+  const dayLabel = (day) => (window.NutriApp?.getDayLabel ? window.NutriApp.getDayLabel(day) : day);
   const report = NutriApp.getCurrentReport();
   const emptyState = document.getElementById('empty-state');
   const content = document.getElementById('results-content');
@@ -25,7 +29,7 @@
   ring.style.setProperty('--ring-color', categoryColors[category] || '#17a398');
 
   document.getElementById('risk-score').textContent = String(riskScore);
-  document.getElementById('risk-category').textContent = `${category} ${t('results_risk_suffix')}`;
+  document.getElementById('risk-category').textContent = `${riskLabel(category)} ${t('results_risk_suffix')}`;
 
   const riskAlert = document.getElementById('risk-alert');
   riskAlert.textContent =
@@ -46,8 +50,22 @@
     community: report.payload.community
   });
 
+  const fallbackActionKeysByCategory = {
+    Urgent: ['action_urgent_1', 'action_urgent_2', 'action_urgent_3'],
+    High: ['action_high_1', 'action_high_2', 'action_high_3'],
+    Moderate: ['action_moderate_1', 'action_moderate_2', 'action_moderate_3'],
+    Low: ['action_low_1', 'action_low_2']
+  };
+
+  const actionKeys =
+    Array.isArray(report?.riskOutput?.actionKeys) && report.riskOutput.actionKeys.length
+      ? report.riskOutput.actionKeys
+      : fallbackActionKeysByCategory[category] || [];
+
+  const actionItems = actionKeys.length ? actionKeys.map((key) => t(key)) : report.riskOutput.actions || [];
+
   const actionsList = document.getElementById('actions-list');
-  report.riskOutput.actions.forEach((action) => {
+  actionItems.forEach((action) => {
     const li = document.createElement('li');
     li.textContent = action;
     actionsList.appendChild(li);
@@ -58,7 +76,7 @@
   const deficiencyBody = document.querySelector('#deficiency-table tbody');
   report.deficiencies.forEach((item) => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${item.name}</td><td>${item.score}</td><td>${item.confidence}%</td>`;
+    row.innerHTML = `<td>${nutrientLabel(item.name)}</td><td>${item.score}</td><td>${item.confidence}%</td>`;
     deficiencyBody.appendChild(row);
   });
 
@@ -66,9 +84,10 @@
   report.resources.forEach((resource) => {
     const box = document.createElement('div');
     box.className = 'resource-item';
+    const distanceText = t('map_distance_away', { distance: resource.distanceKm });
     box.innerHTML = `
       <strong>${resource.name}</strong>
-      <div class="small-text">${resource.type} · ${resource.distanceKm} km away</div>
+      <div class="small-text">${resourceTypeLabel(resource.type)} · ${distanceText}</div>
       <div class="small-text">${resource.open}</div>
       <div class="small-text">${resource.services.slice(0, 2).join(' · ')}</div>
     `;
@@ -79,7 +98,7 @@
   report.mealPlan.days.forEach((day) => {
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td>${day.day}</td>
+      <td>${dayLabel(day.day)}</td>
       <td>${day.breakfast}</td>
       <td>${day.lunch}</td>
       <td>${day.dinner}</td>
@@ -101,9 +120,11 @@
   }
 
   document.getElementById('speak-btn').addEventListener('click', () => {
-    const text = `Risk level is ${category}. Key actions are: ${report.riskOutput.actions.join(' ')} Top nutrient concerns are ${report.deficiencies
-      .map((item) => item.name)
-      .join(', ')}.`;
+    const text = t('results_speak_summary', {
+      risk: riskLabel(category),
+      actions: actionItems.join(' '),
+      nutrients: report.deficiencies.map((item) => nutrientLabel(item.name)).join(', ')
+    });
     NutriApp.speak(text);
   });
 

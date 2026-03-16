@@ -8,7 +8,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-page="home">
+  <body data-page="home" data-title-key="title_home">
     <header class="topbar">
       <div class="container nav">
         <a class="brand" href="./index.html">
@@ -29,37 +29,37 @@
     <main class="container">
       <section class="hero">
         <div class="badges">
-          <span class="badge">AI Triage</span>
-          <span class="badge">Local Meal Planning</span>
-          <span class="badge">Offline-Ready PWA</span>
+          <span class="badge" data-i18n="home_badge_triage">AI Triage</span>
+          <span class="badge" data-i18n="home_badge_meal">Local Meal Planning</span>
+          <span class="badge" data-i18n="home_badge_offline">Offline-Ready PWA</span>
         </div>
-        <h1>Detect malnutrition early and deliver practical nutrition action in minutes.</h1>
-        <p>
+        <h1 data-i18n="home_hero_title">Detect malnutrition early and deliver practical nutrition action in minutes.</h1>
+        <p data-i18n="home_hero_desc">
           NutriPath AI helps individuals, families, caregivers, health workers, and NGOs run screenings, generate
           low-cost local meal plans, and connect households to nearby support services from one web platform.
         </p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="./assessment.html">Start AI Assessment</a>
-          <a class="btn btn-secondary" href="./dashboard.html">Open Program Dashboard</a>
+          <a class="btn btn-primary" href="./assessment.html" data-i18n="home_cta_assessment">Start AI Assessment</a>
+          <a class="btn btn-secondary" href="./dashboard.html" data-i18n="home_cta_dashboard">Open Program Dashboard</a>
         </div>
       </section>
 
       <section class="section grid-3">
         <article class="card feature-card">
-          <h3>1. Guided Risk Screening</h3>
-          <p>
+          <h3 data-i18n="home_feature1_title">1. Guided Risk Screening</h3>
+          <p data-i18n="home_feature1_desc">
             Capture MUAC, symptoms, diet diversity, and household context through a simple mobile-first form with low-literacy labels.
           </p>
         </article>
         <article class="card feature-card">
-          <h3>2. AI-Powered Action Plan</h3>
-          <p>
+          <h3 data-i18n="home_feature2_title">2. AI-Powered Action Plan</h3>
+          <p data-i18n="home_feature2_desc">
             Get a risk score, urgent referral guidance, probable deficiencies, and a household nutrition plan using local affordable foods.
           </p>
         </article>
         <article class="card feature-card">
-          <h3>3. Resource Routing</h3>
-          <p>
+          <h3 data-i18n="home_feature3_title">3. Resource Routing</h3>
+          <p data-i18n="home_feature3_desc">
             Instantly find clinics, food support points, and NGO services with route-ready map cards and travel distance estimates.
           </p>
         </article>
@@ -67,59 +67,59 @@
 
       <section class="section grid-2">
         <article class="card">
-          <h2>Built for underserved communities</h2>
-          <p class="subtle">
+          <h2 data-i18n="home_built_title">Built for underserved communities</h2>
+          <p class="subtle" data-i18n="home_built_desc">
             Interface includes icon-first controls, voice readouts, and fast loading on low bandwidth. Data can be captured in field visits and synced later.
           </p>
           <div class="kpi">
-            <span>Average screening time</span>
+            <span data-i18n="home_kpi_time">Average screening time</span>
             <strong>4-6 min</strong>
           </div>
           <div class="kpi">
-            <span>AI recommendation turnaround</span>
+            <span data-i18n="home_kpi_turnaround">AI recommendation turnaround</span>
             <strong>&lt; 2 sec</strong>
           </div>
           <div class="kpi">
-            <span>Designed users</span>
-            <strong>Individuals + Families + CHWs + NGOs</strong>
+            <span data-i18n="home_kpi_users_label">Designed users</span>
+            <strong data-i18n="home_kpi_users_value">Individuals + Families + CHWs + NGOs</strong>
           </div>
         </article>
 
         <article class="card">
-          <h2>Core flow inside the app</h2>
+          <h2 data-i18n="home_flow_title">Core flow inside the app</h2>
           <table class="table" aria-label="Core app flow">
             <thead>
               <tr>
-                <th>Step</th>
-                <th>What user does</th>
-                <th>What app returns</th>
+                <th data-i18n="home_flow_head_step">Step</th>
+                <th data-i18n="home_flow_head_user">What user does</th>
+                <th data-i18n="home_flow_head_app">What app returns</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td>1</td>
-                <td>Fill screening form</td>
-                <td>Validated health + diet profile</td>
+                <td data-i18n="home_flow_1_user">Fill screening form</td>
+                <td data-i18n="home_flow_1_app">Validated health + diet profile</td>
               </tr>
               <tr>
                 <td>2</td>
-                <td>Run AI assessment</td>
-                <td>Risk class + urgency + deficiency signals</td>
+                <td data-i18n="home_flow_2_user">Run AI assessment</td>
+                <td data-i18n="home_flow_2_app">Risk class + urgency + deficiency signals</td>
               </tr>
               <tr>
                 <td>3</td>
-                <td>Open meal planner</td>
-                <td>7-day local meal recommendations</td>
+                <td data-i18n="home_flow_3_user">Open meal planner</td>
+                <td data-i18n="home_flow_3_app">7-day local meal recommendations</td>
               </tr>
               <tr>
                 <td>4</td>
-                <td>Check map</td>
-                <td>Nearby support points sorted by distance</td>
+                <td data-i18n="home_flow_4_user">Check map</td>
+                <td data-i18n="home_flow_4_app">Nearby support points sorted by distance</td>
               </tr>
               <tr>
                 <td>5</td>
-                <td>Track follow-up</td>
-                <td>Case history + hotspot dashboard</td>
+                <td data-i18n="home_flow_5_user">Track follow-up</td>
+                <td data-i18n="home_flow_5_app">Case history + hotspot dashboard</td>
               </tr>
             </tbody>
           </table>
@@ -127,7 +127,7 @@
       </section>
     </main>
 
-    <footer class="container footer">NutriPath AI for Fuel the Future Hackathon · <span id="year"></span></footer>
+    <footer class="container footer"><span data-i18n="footer_prefix">NutriPath AI for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
 
     <script src="./app.js"></script>
   </body>

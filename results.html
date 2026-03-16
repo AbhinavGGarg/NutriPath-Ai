@@ -7,7 +7,7 @@
     <title>NutriPath AI | Results</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-page="results">
+  <body data-page="results" data-title-key="title_results">
     <header class="topbar">
       <div class="container nav">
         <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath AI</span></a>
@@ -24,31 +24,31 @@
 
     <main class="container">
       <section class="page-header">
-        <h1 class="page-title">Assessment Results</h1>
-        <p class="page-desc" id="result-summary">Latest AI screening output appears below.</p>
+        <h1 class="page-title" data-i18n="results_title">Assessment Results</h1>
+        <p class="page-desc" id="result-summary" data-i18n="results_latest">Latest AI screening output appears below.</p>
       </section>
 
       <section id="empty-state" class="card section hide">
-        <h3>No assessment found</h3>
-        <p class="subtle">Run a new assessment to generate AI results and recommendations.</p>
-        <a class="btn btn-primary" href="./assessment.html">Start Assessment</a>
+        <h3 data-i18n="results_empty_title">No assessment found</h3>
+        <p class="subtle" data-i18n="results_empty_desc">Run a new assessment to generate AI results and recommendations.</p>
+        <a class="btn btn-primary" href="./assessment.html" data-i18n="results_empty_cta">Start Assessment</a>
       </section>
 
       <section id="results-content" class="section hide">
         <div class="grid-2">
           <article class="card">
-            <h3>Risk Classification</h3>
+            <h3 data-i18n="results_risk_title">Risk Classification</h3>
             <div class="risk-ring" id="risk-ring"><strong id="risk-score">0</strong></div>
             <p><strong id="risk-category"></strong></p>
             <div id="risk-alert" class="alert" role="status"></div>
             <div class="cta-row" style="margin-top: 0.75rem;">
-              <button class="btn btn-secondary" id="speak-btn" type="button">Read aloud</button>
-              <button class="btn btn-secondary" id="print-btn" type="button">Print summary</button>
+              <button class="btn btn-secondary" id="speak-btn" type="button" data-i18n="results_btn_read">Read aloud</button>
+              <button class="btn btn-secondary" id="print-btn" type="button" data-i18n="results_btn_print">Print summary</button>
             </div>
           </article>
 
           <article class="card">
-            <h3>Priority Actions</h3>
+            <h3 data-i18n="results_actions_title">Priority Actions</h3>
             <ol id="actions-list"></ol>
             <div class="alert alert-warn" id="follow-up-text"></div>
           </article>
@@ -56,13 +56,13 @@
 
         <div class="grid-2 section">
           <article class="card">
-            <h3>Likely Deficiencies</h3>
+            <h3 data-i18n="results_def_title">Likely Deficiencies</h3>
             <table class="table" id="deficiency-table">
               <thead>
                 <tr>
-                  <th>Nutrient concern</th>
-                  <th>Signal score</th>
-                  <th>Confidence</th>
+                  <th data-i18n="results_def_head_nutrient">Nutrient concern</th>
+                  <th data-i18n="results_def_head_signal">Signal score</th>
+                  <th data-i18n="results_def_head_conf">Confidence</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -70,25 +70,25 @@
           </article>
 
           <article class="card">
-            <h3>Nearest Services</h3>
+            <h3 data-i18n="results_nearest_title">Nearest Services</h3>
             <div id="resource-cards"></div>
             <div class="cta-row" style="margin-top: 0.75rem;">
-              <a class="btn btn-primary" href="./map.html">Open Resource Map</a>
+              <a class="btn btn-primary" href="./map.html" data-i18n="results_open_map">Open Resource Map</a>
             </div>
           </article>
         </div>
 
         <article class="card section">
-          <h3>7-Day Local Meal Plan</h3>
-          <p class="subtle">Budget-aware recommendations optimized for nutrients and locally available foods.</p>
+          <h3 data-i18n="results_meal_title">7-Day Local Meal Plan</h3>
+          <p class="subtle" data-i18n="results_meal_desc">Budget-aware recommendations optimized for nutrients and locally available foods.</p>
           <table class="table" id="meal-plan-table">
             <thead>
               <tr>
-                <th>Day</th>
-                <th>Breakfast</th>
-                <th>Lunch</th>
-                <th>Dinner</th>
-                <th>Est. cost</th>
+                <th data-i18n="results_meal_head_day">Day</th>
+                <th data-i18n="results_meal_head_breakfast">Breakfast</th>
+                <th data-i18n="results_meal_head_lunch">Lunch</th>
+                <th data-i18n="results_meal_head_dinner">Dinner</th>
+                <th data-i18n="results_meal_head_cost">Est. cost</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -97,13 +97,13 @@
         </article>
 
         <div class="cta-row section">
-          <a class="btn btn-primary" href="./assessment.html">Run Another Assessment</a>
-          <a class="btn btn-secondary" href="./dashboard.html">View Program Dashboard</a>
+          <a class="btn btn-primary" href="./assessment.html" data-i18n="results_run_again">Run Another Assessment</a>
+          <a class="btn btn-secondary" href="./dashboard.html" data-i18n="results_view_dashboard">View Program Dashboard</a>
         </div>
       </section>
     </main>
 
-    <footer class="container footer">NutriPath AI for Fuel the Future Hackathon · <span id="year"></span></footer>
+    <footer class="container footer"><span data-i18n="footer_prefix">NutriPath AI for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
 
     <script src="./data.js"></script>
     <script src="./app.js"></script>

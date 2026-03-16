@@ -4,16 +4,16 @@
   const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
 
   const symptoms = [
-    { id: 'fatigue', label: 'Fatigue / low energy', weight: 6, nutrients: ['iron', 'protein'] },
-    { id: 'poor_appetite', label: 'Poor appetite', weight: 8, nutrients: ['zinc', 'protein'] },
-    { id: 'diarrhea', label: 'Frequent diarrhea', weight: 10, nutrients: ['zinc', 'calories'] },
-    { id: 'fever', label: 'Recent fever/infection', weight: 7, nutrients: ['protein', 'vitaminA'] },
-    { id: 'pallor', label: 'Pale skin / pallor', weight: 11, nutrients: ['iron', 'folate'] },
-    { id: 'edema', label: 'Edema/swelling', weight: 20, nutrients: ['protein'] },
-    { id: 'wasting', label: 'Visible wasting', weight: 16, nutrients: ['calories', 'protein'] },
-    { id: 'hair_loss', label: 'Hair thinning/discoloration', weight: 8, nutrients: ['zinc', 'protein'] },
-    { id: 'night_vision', label: 'Poor vision in low light', weight: 12, nutrients: ['vitaminA'] },
-    { id: 'lethargy', label: 'Lethargy/not alert', weight: 16, nutrients: ['calories', 'iron'] }
+    { id: 'fatigue', labelKey: 'symptom_fatigue', weight: 6, nutrients: ['iron', 'protein'] },
+    { id: 'poor_appetite', labelKey: 'symptom_poor_appetite', weight: 8, nutrients: ['zinc', 'protein'] },
+    { id: 'diarrhea', labelKey: 'symptom_diarrhea', weight: 10, nutrients: ['zinc', 'calories'] },
+    { id: 'fever', labelKey: 'symptom_fever', weight: 7, nutrients: ['protein', 'vitaminA'] },
+    { id: 'pallor', labelKey: 'symptom_pallor', weight: 11, nutrients: ['iron', 'folate'] },
+    { id: 'edema', labelKey: 'symptom_edema', weight: 20, nutrients: ['protein'] },
+    { id: 'wasting', labelKey: 'symptom_wasting', weight: 16, nutrients: ['calories', 'protein'] },
+    { id: 'hair_loss', labelKey: 'symptom_hair_loss', weight: 8, nutrients: ['zinc', 'protein'] },
+    { id: 'night_vision', labelKey: 'symptom_night_vision', weight: 12, nutrients: ['vitaminA'] },
+    { id: 'lethargy', labelKey: 'symptom_lethargy', weight: 16, nutrients: ['calories', 'iron'] }
   ];
 
   const symptomNode = document.getElementById('symptom-list');
@@ -49,7 +49,7 @@
   symptoms.forEach((symptom) => {
     const label = document.createElement('label');
     label.className = 'checkbox-item';
-    label.innerHTML = `<input type="checkbox" name="symptoms" value="${symptom.id}" /> <span>${symptom.label}</span>`;
+    label.innerHTML = `<input type="checkbox" name="symptoms" value="${symptom.id}" /> <span>${t(symptom.labelKey)}</span>`;
     symptomNode.appendChild(label);
   });
 
@@ -321,25 +321,25 @@
     else if (risk >= 55) category = 'High';
     else if (risk >= 35) category = 'Moderate';
 
-    const actions = [];
+    const actionKeys = [];
     if (category === 'Urgent') {
-      actions.push('Refer to nearest clinic within 24 hours for severe acute malnutrition screening.');
-      actions.push('Start high-energy, high-protein meals immediately and monitor hydration.');
-      actions.push('Schedule follow-up visit within 48 hours.');
+      actionKeys.push('action_urgent_1');
+      actionKeys.push('action_urgent_2');
+      actionKeys.push('action_urgent_3');
     } else if (category === 'High') {
-      actions.push('Book nutrition consult this week and repeat MUAC in 7 days.');
-      actions.push('Increase meal frequency to 4 times/day with protein at least twice daily.');
-      actions.push('Track appetite and stool consistency daily.');
+      actionKeys.push('action_high_1');
+      actionKeys.push('action_high_2');
+      actionKeys.push('action_high_3');
     } else if (category === 'Moderate') {
-      actions.push('Improve diet diversity this week and add one iron-rich food daily.');
-      actions.push('Repeat growth check in 14 days.');
-      actions.push('Complete caregiver nutrition micro-lessons in Learning Hub.');
+      actionKeys.push('action_moderate_1');
+      actionKeys.push('action_moderate_2');
+      actionKeys.push('action_moderate_3');
     } else {
-      actions.push('Continue current feeding practices and re-screen monthly.');
-      actions.push('Maintain safe water and handwashing routines.');
+      actionKeys.push('action_low_1');
+      actionKeys.push('action_low_2');
     }
 
-    return { risk, category, actions };
+    return { risk, category, actionKeys, actions: actionKeys.map((key) => t(key)) };
   }
 
   function nearestResources(communityKey, topN) {
