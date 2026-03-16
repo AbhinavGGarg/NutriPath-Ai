@@ -23,27 +23,42 @@
   });
 
   const map = L.map('resource-map').setView([18, 10], 2);
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
-    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
-  }).addTo(map);
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
   }).addTo(map);
   map.attributionControl.setPrefix('');
 
+  map.createPane('globalLabelPane');
+  const labelPane = map.getPane('globalLabelPane');
+  if (labelPane) labelPane.style.zIndex = '360';
+
   const markerLayer = L.layerGroup().addTo(map);
   const hotspotLayer = L.layerGroup().addTo(map);
+  const continentLabelLayer = L.layerGroup().addTo(map);
+  const countryLabelLayer = L.layerGroup().addTo(map);
+  const cityLabelLayer = L.layerGroup().addTo(map);
 
   let mapCenter = null;
   let centerLabel = '';
   let usingCurrentLocation = false;
+  let countryCentroids = [];
+  let countryDataLoaded = false;
 
   const markerStyleByType = {
     Clinic: { color: '#e63946', fillColor: '#ff6b74' },
     'Food Support': { color: '#f4b942', fillColor: '#ffd27a' },
     NGO: { color: '#0b3c5d', fillColor: '#4f8ab0' }
   };
+
+  const continentPoints = [
+    { code: '019', fallback: 'Americas', lat: 15, lng: -85 },
+    { code: '150', fallback: 'Europe', lat: 54, lng: 15 },
+    { code: '002', fallback: 'Africa', lat: 2, lng: 20 },
+    { code: '142', fallback: 'Asia', lat: 35, lng: 90 },
+    { code: '009', fallback: 'Oceania', lat: -20, lng: 140 },
+    { code: '010', fallback: 'Antarctica', lat: -78, lng: 0 }
+  ];
 
   function t(key, vars) {
     return window.NutriApp?.t ? window.NutriApp.t(key, vars) : key;
@@ -63,6 +78,86 @@
       .toLowerCase()
       .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim();
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function currentLanguage() {
+    return window.NutriApp?.getUiLanguage ? window.NutriApp.getUiLanguage() : 'en';
+  }
+
+  function localizeRegion(code, fallback) {
+    try {
+      const regionNames = new Intl.DisplayNames([currentLanguage()], { type: 'region' });
+      return regionNames.of(code) || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function createLabelMarker(lat, lng, text, type) {
+    return L.marker([lat, lng], {
+      pane: 'globalLabelPane',
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({
+        className: `map-label map-label-${type}`,
+        html: `<span>${escapeHtml(text)}</span>`
+      })
+    });
+  }
+
+  async function loadCountryCentroids() {
+    if (countryDataLoaded) return;
+    countryDataLoaded = true;
+    try {
+      const response = await fetch('https://raw.githubusercontent.com/gavinr/world-countries-centroids/master/dist/countries.geojson');
+      if (!response.ok) return;
+      const geojson = await response.json();
+      if (!geojson || !Array.isArray(geojson.features)) return;
+      countryCentroids = geojson.features
+        .map((feature) => {
+          const coords = feature?.geometry?.coordinates;
+          const iso = feature?.properties?.ISO;
+          if (!Array.isArray(coords) || coords.length < 2 || !iso) return null;
+          return {
+            iso: String(iso).toUpperCase(),
+            country: feature?.properties?.COUNTRY || iso,
+            lat: Number(coords[1]),
+            lng: Number(coords[0])
+          };
+        })
+        .filter(Boolean);
+    } catch {
+      countryCentroids = [];
+    }
+  }
+
+  function renderGlobalLabels() {
+    continentLabelLayer.clearLayers();
+    countryLabelLayer.clearLayers();
+    cityLabelLayer.clearLayers();
+
+    continentPoints.forEach((point) => {
+      const name = localizeRegion(point.code, point.fallback);
+      createLabelMarker(point.lat, point.lng, name, 'continent').addTo(continentLabelLayer);
+    });
+
+    countryCentroids.forEach((country) => {
+      const localizedCountry = localizeRegion(country.iso, country.country);
+      createLabelMarker(country.lat, country.lng, localizedCountry, 'country').addTo(countryLabelLayer);
+    });
+
+    Object.entries(NutriData.communities).forEach(([city, point]) => {
+      createLabelMarker(point.lat, point.lng, city, 'city').addTo(cityLabelLayer);
+    });
   }
 
   function resolveCommunityInput(value) {
@@ -306,6 +401,8 @@
   });
 
   renderHotspots();
+  loadCountryCentroids().then(renderGlobalLabels);
+  renderGlobalLabels();
   applyFilters();
 
   window.addEventListener('nutri:lang-changed', () => {
@@ -315,6 +412,7 @@
     }
     updateDistanceLabel();
     renderHotspots();
+    renderGlobalLabels();
     applyFilters();
   });
 

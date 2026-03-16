@@ -440,6 +440,26 @@ textarea:focus {
   padding: 0.12rem 0.4rem;
 }
 
+.map-label {
+  background: transparent;
+  border: 0;
+}
+
+.map-label span {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgba(11, 60, 93, 0.82);
+  font-family: Sora, sans-serif;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(11, 60, 93, 0.14);
+  border-radius: 999px;
+  padding: 0.08rem 0.32rem;
+  white-space: nowrap;
+  text-transform: none;
+}
+
 .resource-list {
   display: grid;
   gap: 0.6rem;
