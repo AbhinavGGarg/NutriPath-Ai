@@ -1,11 +1,11 @@
-# NutriPath AI (Fuel the Future Hackathon Website)
+# NutriPath (Fuel the Future Hackathon Website)
 
 A multi-page, mobile-first web app prototype for malnutrition screening and intervention workflows.
 
 ## Pages
 
 - `index.html` - product homepage and role-based entry
-- `assessment.html` - AI risk intake form
+- `assessment.html` - risk intake form
 - `results.html` - risk score, deficiencies, meal plan, and referral actions
 - `map.html` - resource locator map with filters (Leaflet + OpenStreetMap)
 - `dashboard.html` - NGO analytics dashboard with charts

@@ -1,58 +1,58 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b3c5d" />
-    <title>NutriPath AI | Settings</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body data-page="settings" data-title-key="title_settings">
-    <header class="topbar">
-      <div class="container nav">
-        <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath AI</span></a>
-        <nav class="nav-links" aria-label="Primary navigation">
-          <a class="nav-link" data-nav="home" href="./index.html">Home</a>
-          <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
-          <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
-          <a class="nav-link" data-nav="dashboard" href="./dashboard.html">Program Dashboard</a>
-          <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
-        </nav>
-      </div>
-    </header>
+ <head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <meta name="theme-color" content="#0b3c5d" />
+ <title>NutriPath | Settings</title>
+ <link rel="stylesheet" href="./styles.css" />
+ </head>
+ <body data-page="settings" data-title-key="title_settings">
+ <header class="topbar">
+ <div class="container nav">
+ <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath</span></a>
+ <nav class="nav-links" aria-label="Primary navigation">
+ <a class="nav-link" data-nav="home" href="./index.html">Home</a>
+ <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
+ <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
+ <a class="nav-link" data-nav="dashboard" href="./dashboard.html">Program Dashboard</a>
+ <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
+ </nav>
+ </div>
+ </header>
 
-    <main class="container">
-      <section class="page-header">
-        <h1 class="page-title" data-i18n="settings_title">Language Settings</h1>
-        <p class="page-desc" data-i18n="settings_desc">Choose your app language. The interface updates immediately across pages.</p>
-      </section>
+ <main class="container">
+ <section class="page-header">
+ <h1 class="page-title" data-i18n="settings_title">Language Settings</h1>
+ <p class="page-desc" data-i18n="settings_desc">Choose your app language. The interface updates immediately across pages.</p>
+ </section>
 
-      <section class="card section" style="max-width: 720px;">
-        <div class="field">
-          <label for="ui-language-input" data-i18n="settings_language_label">Display language</label>
-          <input
-            id="ui-language-input"
-            list="ui-language-options"
-            data-i18n-placeholder="settings_language_search_placeholder"
-            placeholder="Type language name or code (for example: English, Hindi, ar)"
-            autocomplete="off"
-          />
-          <datalist id="ui-language-options"></datalist>
-        </div>
-        <div class="field" style="margin-top: 0.6rem;">
-          <p class="small-text" data-i18n="settings_language_search_label" style="margin: 0 0 0.5rem 0;">Search language</p>
-          <button id="apply-language-btn" class="btn btn-primary" type="button" data-i18n="settings_language_apply">Apply language</button>
-        </div>
-        <p class="small-text" data-i18n="settings_note" style="margin-top: 0.7rem;">
-          Tip: assessment "Preferred language" is for report context; this setting controls app UI text.
-        </p>
-        <p id="settings-status" class="status-msg"></p>
-      </section>
-    </main>
+ <section class="card section" style="max-width: 720px;">
+ <div class="field">
+ <label for="ui-language-input" data-i18n="settings_language_label">Display language</label>
+ <input
+ id="ui-language-input"
+ list="ui-language-options"
+ data-i18n-placeholder="settings_language_search_placeholder"
+ placeholder="Type language name or code (for example: English, Hindi, ar)"
+ autocomplete="off"
+ />
+ <datalist id="ui-language-options"></datalist>
+ </div>
+ <div class="field" style="margin-top: 0.6rem;">
+ <p class="small-text" data-i18n="settings_language_search_label" style="margin: 0 0 0.5rem 0;">Search language</p>
+ <button id="apply-language-btn" class="btn btn-primary" type="button" data-i18n="settings_language_apply">Apply language</button>
+ </div>
+ <p class="small-text" data-i18n="settings_note" style="margin-top: 0.7rem;">
+ Tip: assessment "Preferred language" is for report context; this setting controls app UI text.
+ </p>
+ <p id="settings-status" class="status-msg"></p>
+ </section>
+ </main>
 
-    <footer class="container footer"><span data-i18n="footer_prefix">NutriPath AI for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
+ <footer class="container footer"><span data-i18n="footer_prefix">NutriPath for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
 
-    <script src="./app.js"></script>
-    <script src="./settings.js"></script>
-  </body>
+ <script src="./app.js"></script>
+ <script src="./settings.js"></script>
+ </body>
 </html>

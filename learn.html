@@ -1,109 +1,109 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b3c5d" />
-    <title>NutriPath AI | Learning Hub</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body data-page="learn" data-title-key="title_learn">
-    <header class="topbar">
-      <div class="container nav">
-        <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath AI</span></a>
-        <nav class="nav-links" aria-label="Primary navigation">
-          <a class="nav-link" data-nav="home" href="./index.html">Home</a>
-          <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
-          <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
-          <a class="nav-link" data-nav="dashboard" href="./dashboard.html">Program Dashboard</a>
-          <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
-        </nav>
-      </div>
-    </header>
+ <head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <meta name="theme-color" content="#0b3c5d" />
+ <title>NutriPath | Learning Hub</title>
+ <link rel="stylesheet" href="./styles.css" />
+ </head>
+ <body data-page="learn" data-title-key="title_learn">
+ <header class="topbar">
+ <div class="container nav">
+ <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath</span></a>
+ <nav class="nav-links" aria-label="Primary navigation">
+ <a class="nav-link" data-nav="home" href="./index.html">Home</a>
+ <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
+ <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
+ <a class="nav-link" data-nav="dashboard" href="./dashboard.html">Program Dashboard</a>
+ <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
+ </nav>
+ </div>
+ </header>
 
-    <main class="container">
-      <section class="page-header">
-        <h1 class="page-title" data-i18n="learn_title">Nutrition Learning Hub</h1>
-        <p class="page-desc" data-i18n="learn_desc">Short, practical, low-literacy lessons that individuals, families, caregivers, and CHWs can apply immediately.</p>
-      </section>
+ <main class="container">
+ <section class="page-header">
+ <h1 class="page-title" data-i18n="learn_title">Nutrition Learning Hub</h1>
+ <p class="page-desc" data-i18n="learn_desc">Short, practical, low-literacy lessons that individuals, families, caregivers, and CHWs can apply immediately.</p>
+ </section>
 
-      <section class="section lesson-grid" id="lesson-grid"></section>
+ <section class="section lesson-grid" id="lesson-grid"></section>
 
-      <section class="section">
-        <article class="card">
-          <h3>Food-to-Meal Builder</h3>
-          <p class="small-text">
-            Enter foods your household has right now to see nutrient strengths, practical recipe ideas, and smart foods to add next.
-            If a food is not in the list, type it anyway and the tool will still use it.
-            Portions are shown with food-appropriate units (for example slices for bread, cups for cooked grains).
-          </p>
+ <section class="section">
+ <article class="card">
+ <h3>Food-to-Meal Builder</h3>
+ <p class="small-text">
+ Enter foods your household has right now to see nutrient strengths, practical recipe ideas, and smart foods to add next.
+ If a food is not in the list, type it anyway and the tool will still use it.
+ Portions are shown with food-appropriate units (for example slices for bread, cups for cooked grains).
+ </p>
 
-          <div class="form-grid">
-            <div class="field">
-              <label for="hub-food-input">Add a food</label>
-              <input id="hub-food-input" list="hub-food-options" placeholder="Type food name (for example: lentils)" />
-              <datalist id="hub-food-options"></datalist>
-            </div>
-            <div class="field" style="align-content: end;">
-              <div class="cta-row">
-                <button id="hub-add-food" class="btn btn-secondary" type="button">Add Food</button>
-                <button id="hub-clear-foods" class="btn btn-secondary" type="button">Clear</button>
-                <button id="hub-analyze-foods" class="btn btn-primary" type="button">Analyze Foods</button>
-              </div>
-            </div>
-          </div>
+ <div class="form-grid">
+ <div class="field">
+ <label for="hub-food-input">Add a food</label>
+ <input id="hub-food-input" list="hub-food-options" placeholder="Type food name (for example: lentils)" />
+ <datalist id="hub-food-options"></datalist>
+ </div>
+ <div class="field" style="align-content: end;">
+ <div class="cta-row">
+ <button id="hub-add-food" class="btn btn-secondary" type="button">Add Food</button>
+ <button id="hub-clear-foods" class="btn btn-secondary" type="button">Clear</button>
+ <button id="hub-analyze-foods" class="btn btn-primary" type="button">Analyze Foods</button>
+ </div>
+ </div>
+ </div>
 
-          <div id="hub-selected-foods" class="selected-foods" aria-live="polite"></div>
-          <p id="hub-food-status" class="small-text" style="margin: 0.5rem 0 0;"></p>
+ <div id="hub-selected-foods" class="selected-foods" aria-live="polite"></div>
+ <p id="hub-food-status" class="small-text" style="margin: 0.5rem 0 0;"></p>
 
-          <div id="hub-food-results" class="grid-3 section hide" style="padding-top: 0.9rem;">
-            <article class="card">
-              <h4>What You Can Make</h4>
-              <ul id="hub-meal-list"></ul>
-            </article>
-            <article class="card">
-              <h4>What You Get From These Foods</h4>
-              <ul id="hub-nutrient-list"></ul>
-            </article>
-            <article class="card">
-              <h4>Best Foods to Add Next</h4>
-              <ul id="hub-addon-list"></ul>
-            </article>
-          </div>
-        </article>
-      </section>
+ <div id="hub-food-results" class="grid-3 section hide" style="padding-top: 0.9rem;">
+ <article class="card">
+ <h4>What You Can Make</h4>
+ <ul id="hub-meal-list"></ul>
+ </article>
+ <article class="card">
+ <h4>What You Get From These Foods</h4>
+ <ul id="hub-nutrient-list"></ul>
+ </article>
+ <article class="card">
+ <h4>Best Foods to Add Next</h4>
+ <ul id="hub-addon-list"></ul>
+ </article>
+ </div>
+ </article>
+ </section>
 
-      <section class="section grid-2">
-        <article class="card">
-          <h3 data-i18n="learn_quiz_title">Myth vs Fact Quick Check</h3>
-          <div id="quiz-shell">
-            <p><strong data-i18n="learn_myth_label">Myth:</strong> <span data-i18n="learn_myth_text">"Only expensive foods can prevent malnutrition."</span></p>
-            <div class="cta-row">
-              <button type="button" class="btn btn-secondary" data-answer="myth" data-i18n="learn_btn_myth">Myth</button>
-              <button type="button" class="btn btn-secondary" data-answer="fact" data-i18n="learn_btn_fact">Fact</button>
-            </div>
-            <p id="quiz-feedback" class="small-text"></p>
-          </div>
-        </article>
+ <section class="section grid-2">
+ <article class="card">
+ <h3 data-i18n="learn_quiz_title">Myth vs Fact Quick Check</h3>
+ <div id="quiz-shell">
+ <p><strong data-i18n="learn_myth_label">Myth:</strong> <span data-i18n="learn_myth_text">"Only expensive foods can prevent malnutrition."</span></p>
+ <div class="cta-row">
+ <button type="button" class="btn btn-secondary" data-answer="myth" data-i18n="learn_btn_myth">Myth</button>
+ <button type="button" class="btn btn-secondary" data-answer="fact" data-i18n="learn_btn_fact">Fact</button>
+ </div>
+ <p id="quiz-feedback" class="small-text"></p>
+ </div>
+ </article>
 
-        <article class="card">
-          <h3 data-i18n="learn_audio_title">Audio Assistant</h3>
-          <p class="small-text" data-i18n="learn_audio_desc">Tap to hear key guidance in plain language during field visits.</p>
-          <div class="cta-row">
-            <button id="speak-warning" class="btn btn-secondary" type="button" data-i18n="learn_btn_warning">Read warning signs</button>
-            <button id="speak-meal" class="btn btn-secondary" type="button" data-i18n="learn_btn_meal">Read meal tips</button>
-          </div>
-          <div class="alert alert-success" style="margin-top: 0.9rem;" data-i18n="learn_alert_tip">
-            Keep instructions short, visual, and repeated during follow-ups for better adoption.
-          </div>
-        </article>
-      </section>
-    </main>
+ <article class="card">
+ <h3 data-i18n="learn_audio_title">Audio Assistant</h3>
+ <p class="small-text" data-i18n="learn_audio_desc">Tap to hear key guidance in plain language during field visits.</p>
+ <div class="cta-row">
+ <button id="speak-warning" class="btn btn-secondary" type="button" data-i18n="learn_btn_warning">Read warning signs</button>
+ <button id="speak-meal" class="btn btn-secondary" type="button" data-i18n="learn_btn_meal">Read meal tips</button>
+ </div>
+ <div class="alert alert-success" style="margin-top: 0.9rem;" data-i18n="learn_alert_tip">
+ Keep instructions short, visual, and repeated during follow-ups for better adoption.
+ </div>
+ </article>
+ </section>
+ </main>
 
-    <footer class="container footer"><span data-i18n="footer_prefix">NutriPath AI for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
+ <footer class="container footer"><span data-i18n="footer_prefix">NutriPath for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
 
-    <script src="./data.js"></script>
-    <script src="./app.js"></script>
-    <script src="./learn.js"></script>
-  </body>
+ <script src="./data.js"></script>
+ <script src="./app.js"></script>
+ <script src="./learn.js"></script>
+ </body>
 </html>

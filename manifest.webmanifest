@@ -1,10 +1,10 @@
 {
-  "name": "NutriPath AI",
-  "short_name": "NutriPath",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#f4f8f7",
-  "theme_color": "#0b3c5d",
-  "description": "AI-powered malnutrition screening, recommendations, and resource routing platform.",
-  "icons": []
+ "name": "NutriPath",
+ "short_name": "NutriPath",
+ "start_url": "./index.html",
+ "display": "standalone",
+ "background_color": "#f4f8f7",
+ "theme_color": "#0b3c5d",
+ "description": "Data-informed malnutrition screening, recommendations, and resource routing platform.",
+ "icons": []
 }
