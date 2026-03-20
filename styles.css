@@ -805,6 +805,112 @@ textarea:focus {
   background: #fff;
 }
 
+.action-hero {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.action-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tool-card {
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+}
+
+.tool-card h3 {
+  color: var(--primary);
+  margin-bottom: 0;
+}
+
+.tool-result {
+  margin-top: 0.8rem;
+  border: 1px solid rgba(11, 60, 93, 0.12);
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(239, 248, 248, 0.94));
+}
+
+.result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.severity-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-family: Sora, sans-serif;
+}
+
+.severity-low {
+  background: rgba(17, 130, 95, 0.14);
+  color: #0f6b4f;
+}
+
+.severity-moderate {
+  background: rgba(244, 185, 66, 0.2);
+  color: #8a5c00;
+}
+
+.severity-high {
+  background: rgba(230, 57, 70, 0.14);
+  color: #9b1021;
+}
+
+.severity-urgent {
+  background: rgba(230, 57, 70, 0.22);
+  color: #87000f;
+}
+
+.tool-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.tool-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.tool-columns h4 {
+  margin: 0.25rem 0 0.45rem;
+}
+
+.tool-columns ul,
+.tool-columns ol,
+.tool-result ul,
+.tool-result ol {
+  margin: 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.voice-last-summary {
+  margin-top: 0.65rem;
+  border: 1px solid rgba(11, 60, 93, 0.1);
+  border-radius: 10px;
+  background: rgba(11, 60, 93, 0.04);
+  padding: 0.6rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
 .lesson-card-strong {
   display: grid;
   gap: 0.55rem;
@@ -999,6 +1105,11 @@ textarea:focus {
   }
 
   .next-step-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-tool-grid,
+  .tool-columns {
     grid-template-columns: 1fr;
   }
 

@@ -146,18 +146,18 @@
     if (isChild) {
       steps.push({
         title: 'Child growth support',
-        desc: 'Use child-focused feeding and warning-sign guidance for early action at home.',
-        cta: 'Open child guidance',
-        href: './learn.html#lesson-child-support',
+        desc: 'Use Action Hub risk and urgency tools to triage child warning patterns quickly.',
+        cta: 'Open Action Hub tools',
+        href: './learn.html#tool-risk-checker',
       });
     }
 
     if (isOlderAdult) {
       steps.push({
         title: 'Older adult nutrition check',
-        desc: 'Low appetite and weight change in seniors can be high-risk. Use the senior quick-guide now.',
-        cta: 'Open senior guidance',
-        href: './learn.html#lesson-senior-support',
+        desc: 'Low appetite and weight change in seniors can be high-risk. Run risk and escalation tools now.',
+        cta: 'Open Action Hub tools',
+        href: './learn.html#tool-escalation',
       });
     }
 
@@ -174,7 +174,7 @@
       title: 'Check harmful nutrition beliefs',
       desc: 'Use claim checker to correct myths that can delay nutrition recovery.',
       cta: 'Check a claim',
-      href: './learn.html#claim-checker',
+      href: './learn.html#tool-claim-checker',
     });
 
     return steps.slice(0, 4);

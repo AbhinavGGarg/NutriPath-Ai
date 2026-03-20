@@ -1,132 +1,6 @@
 (function () {
   const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
 
-  const LESSONS = [
-    {
-      id: 'lesson-family-food',
-      title: 'Feed a Family With Limited Food',
-      why: 'When grocery money is tight, meal quality often drops before hunger is obvious.',
-      takeaways: [
-        'Build each meal with an energy food, a protein food, and one protective food.',
-        'Use low-cost staples: beans, eggs, peanut butter, oats, canned fish, yogurt, potatoes, frozen vegetables.',
-        'If fresh produce is limited, canned and frozen options still improve vitamin intake.',
-        'Batch-cook basics once so quick meals are possible on busy days.',
-      ],
-      now: 'Pick one low-cost protein to add at your next grocery trip, then re-run Meal Builder.',
-    },
-    {
-      id: 'lesson-warning-signs',
-      title: 'Warning Signs You Should Not Ignore',
-      why: 'Missed early signs lead to delayed treatment and harder recovery.',
-      takeaways: [
-        'Watch for low appetite, fast weight loss, weakness, frequent diarrhea, swelling, and low activity.',
-        'In children: monitor growth slowdown, fatigue, pale skin, and delayed development.',
-        'In older adults: confusion, appetite drop, and dehydration are high-risk warning signs.',
-        'Escalate quickly if swelling, severe lethargy, persistent vomiting, or confusion appears.',
-      ],
-      now: 'If severe signs appear, use Resource Map now and seek urgent evaluation.',
-    },
-    {
-      id: 'lesson-child-support',
-      title: 'Child Nutrition and Growth Support',
-      why: 'A child can look fed and still be deficient in protein, iron, or other key nutrients.',
-      takeaways: [
-        'Offer frequent small meals when appetite is low.',
-        'Include protein and iron often: eggs, beans, lentils, peanut butter, canned fish, fortified cereals.',
-        'Pair iron foods with vitamin C foods for better absorption.',
-        'Track appetite and energy weekly, not only weight alone.',
-      ],
-      now: 'Use Meal Builder with your current foods and prioritize protein + iron upgrades this week.',
-    },
-    {
-      id: 'lesson-senior-support',
-      title: 'Nutrition Support for Older Adults',
-      why: 'In older adults, low appetite and isolation can quickly cause dangerous nutrition decline.',
-      takeaways: [
-        'Watch for reduced appetite, chewing problems, unplanned weight loss, and fatigue.',
-        'Use soft, high-protein additions: yogurt, eggs, beans, soups, nut butter, milk alternatives.',
-        'Hydration is part of nutrition risk, especially when appetite is low.',
-        'Do not dismiss confusion or sudden weakness as normal aging.',
-      ],
-      now: 'If there is ongoing weight loss or confusion, seek evaluation and nearby support immediately.',
-    },
-    {
-      id: 'lesson-food-desert',
-      title: 'Food Desert / Low Access Survival Tips',
-      why: 'Many households rely on corner stores, dollar stores, or pantry items with limited options.',
-      takeaways: [
-        'Choose shelf-stable upgrades: beans, oats, canned tuna, canned beans, peanut butter, powdered milk.',
-        'Choose no-sugar or low-sodium options when possible, but focus first on consistent nutrition intake.',
-        'Build quick meals from pantry items before adding snacks or sugary drinks.',
-        'Use frozen vegetables when fresh options are costly or hard to reach.',
-      ],
-      now: 'Pick one shelf-stable protein and one protective food to add this week.',
-    },
-    {
-      id: 'lesson-cultural-flex',
-      title: 'Culturally Flexible Meal Guidance',
-      why: 'Nutrition support works best when it adapts to household food culture and what people will actually eat.',
-      takeaways: [
-        'Use food categories and substitutions instead of one fixed cuisine style.',
-        'Keep familiar staples, then improve them with protein and protective sides.',
-        'Swap by function: lentils/beans for protein, cabbage/frozen veg for protective foods, oats/rice/potatoes for energy.',
-        'Respect household preferences to improve long-term follow-through.',
-      ],
-      now: 'Choose one family-favorite dish and upgrade it with a low-cost protein add-on.',
-    },
-  ];
-
-  const CLAIM_RULES = [
-    {
-      keys: ['only expensive', 'healthy food is always expensive', 'healthy food always too expensive'],
-      verdict: 'myth',
-      explanation: 'Low-cost foods can improve nutrition when combined well. Cost matters, but expensive food is not the only path.',
-      takeaway: 'Use affordable proteins and staples first: beans, eggs, oats, peanut butter, canned fish, frozen vegetables.',
-      safer: 'Affordable foods can still build strong nutrition when meals include protein and protective foods.',
-    },
-    {
-      keys: ['overweight', 'cant be malnourished', 'cannot be malnourished'],
-      verdict: 'myth',
-      explanation: 'Body weight alone does not confirm nutrient quality. A person can be overweight and still deficient in iron, protein, or vitamins.',
-      takeaway: 'Check diet quality and warning signs, not just body size.',
-      safer: 'A person can have enough calories but still lack key nutrients.',
-    },
-    {
-      keys: ['skipping meals is fine', 'skip meals', 'big dinner'],
-      verdict: 'depends',
-      explanation: 'Meal timing affects energy, appetite, and nutrient intake. Repeated meal skipping raises nutrition risk in many households.',
-      takeaway: 'Aim for regular eating windows and include protein earlier in the day when possible.',
-      safer: 'Try smaller regular meals instead of long gaps followed by one large meal.',
-    },
-    {
-      keys: ['fresh food is the only healthy option', 'only fresh food', 'fresh only'],
-      verdict: 'myth',
-      explanation: 'Frozen and canned foods can be nutritious and practical, especially in food deserts and low-access settings.',
-      takeaway: 'Use frozen vegetables, canned beans, and canned fish when fresh options are limited.',
-      safer: 'Fresh, frozen, and canned foods can all support health when chosen carefully.',
-    },
-    {
-      keys: ['older adults naturally eat less', 'weight loss is normal', 'seniors naturally eat less'],
-      verdict: 'depends',
-      explanation: 'Appetite can change with age, but unexplained weight loss is a warning sign and should not be ignored.',
-      takeaway: 'Track appetite and weight trends. Seek help if decline continues.',
-      safer: 'Some appetite change happens with age, but persistent weight loss needs follow-up.',
-    },
-    {
-      keys: ['protein is only found in meat', 'protein only in meat'],
-      verdict: 'myth',
-      explanation: 'Protein also comes from beans, lentils, soy foods, dairy, eggs, nuts, and seeds.',
-      takeaway: 'Use low-cost protein mix-ins even when meat is expensive.',
-      safer: 'Meat is one protein source, but many affordable non-meat options also work.',
-    },
-  ];
-
-  const VOICE_MODE_CONFIG = {
-    standard: { rate: 0.98, pitch: 1, volume: 1 },
-    slow: { rate: 0.86, pitch: 1, volume: 1 },
-    field: { rate: 0.8, pitch: 0.95, volume: 1 },
-  };
-
   function escapeHtml(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -145,270 +19,450 @@
       .trim();
   }
 
-  function initLessonCards(voiceApi) {
-    const grid = document.getElementById('lesson-grid');
-    if (!grid) return;
-
-    grid.innerHTML = '';
-    LESSONS.forEach((lesson) => {
-      const node = document.createElement('article');
-      node.className = 'lesson-card lesson-card-strong';
-      node.id = lesson.id;
-      node.innerHTML = `
-        <span class="badge">Quick-use guide</span>
-        <h3>${escapeHtml(lesson.title)}</h3>
-        <p class="small-text"><strong>Why it matters:</strong> ${escapeHtml(lesson.why)}</p>
-        <h4>Practical takeaways</h4>
-        <ul>
-          ${lesson.takeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
-        </ul>
-        <div class="alert alert-warn"><strong>What to do now:</strong> ${escapeHtml(lesson.now)}</div>
-        <div class="cta-row" style="margin-top: 0.7rem;">
-          <button type="button" class="btn btn-secondary" data-lesson-listen="${lesson.id}">Listen</button>
-        </div>
-      `;
-      grid.appendChild(node);
-    });
-
-    grid.addEventListener('click', (event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      const lessonId = target.dataset.lessonListen;
-      if (!lessonId) return;
-      const lesson = LESSONS.find((item) => item.id === lessonId);
-      if (!lesson) return;
-
-      const speechText = [
-        lesson.title,
-        `Why it matters. ${lesson.why}`,
-        `Practical takeaways. ${lesson.takeaways.join(' ')}`,
-        `What to do now. ${lesson.now}`,
-      ].join(' ');
-      voiceApi.speakText(speechText);
-    });
+  function listToHtml(items, emptyText) {
+    if (!items.length) return `<li>${escapeHtml(emptyText)}</li>`;
+    return items.map((item) => `<li>${item}</li>`).join('');
   }
 
-  function initVoiceAssistant() {
-    const modeNode = document.getElementById('voice-mode');
-    const playBtn = document.getElementById('voice-play');
-    const pauseBtn = document.getElementById('voice-pause');
-    const replayBtn = document.getElementById('voice-replay');
-    const stopBtn = document.getElementById('voice-stop');
-    const statusNode = document.getElementById('voice-status');
-    const scriptNode = document.getElementById('voice-script');
+  function badgeClass(level) {
+    const key = String(level || '').toLowerCase();
+    if (key.includes('urgent')) return 'severity-badge severity-urgent';
+    if (key.includes('high') || key.includes('support this week')) return 'severity-badge severity-high';
+    if (key.includes('moderate') || key.includes('improve meals')) return 'severity-badge severity-moderate';
+    return 'severity-badge severity-low';
+  }
 
-    const synth = window.speechSynthesis;
-    const chunks = scriptNode ? [...scriptNode.querySelectorAll('[data-voice-chunk]')] : [];
-    let currentUtterances = [];
-    let isPaused = false;
+  function buildVoiceSupport() {
+    const playBtn = document.getElementById('voice-play-result');
+    const replayBtn = document.getElementById('voice-replay-result');
+    const stopBtn = document.getElementById('voice-stop-result');
+    const slowMode = document.getElementById('voice-slow-mode');
+    const statusNode = document.getElementById('voice-status');
+    const summaryNode = document.getElementById('voice-last-summary');
+
+    let latestText = '';
+    let lastSpokenText = '';
 
     function setStatus(text) {
-      if (!statusNode) return;
-      statusNode.textContent = text;
+      if (statusNode) statusNode.textContent = text;
     }
 
-    function clearHighlights() {
-      chunks.forEach((chunk) => chunk.classList.remove('spoken-active'));
-    }
-
-    function bestVoice() {
-      if (!synth) return null;
-      const voices = synth.getVoices() || [];
+    function chooseVoice() {
+      if (!window.speechSynthesis) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
       if (!voices.length) return null;
 
-      const preferred = [
-        'Google US English',
-        'Microsoft Aria',
-        'Samantha',
-        'Jenny',
-        'Daniel',
-      ];
-
+      const preferred = ['Google US English', 'Microsoft Aria', 'Samantha', 'Jenny', 'Daniel'];
       for (const name of preferred) {
         const hit = voices.find((voice) => voice.lang?.startsWith('en') && voice.name.includes(name));
         if (hit) return hit;
       }
-
       return voices.find((voice) => voice.lang?.toLowerCase().includes('en-us')) || voices.find((voice) => voice.lang?.startsWith('en')) || voices[0];
     }
 
-    function splitSpeech(text) {
-      const raw = String(text || '').trim();
-      if (!raw) return [];
-      const sentenceParts = raw.match(/[^.!?]+[.!?]?/g) || [raw];
-      const list = [];
-      let current = '';
-      sentenceParts.forEach((part) => {
-        const next = part.trim();
-        if (!next) return;
-        if ((current + ' ' + next).trim().length > 160 && current) {
-          list.push(current.trim());
-          current = next;
-        } else {
-          current = `${current} ${next}`.trim();
-        }
-      });
-      if (current) list.push(current.trim());
-      return list;
-    }
-
-    function stopSpeech() {
-      if (!synth) return;
-      synth.cancel();
-      currentUtterances = [];
-      isPaused = false;
-      clearHighlights();
-      setStatus('Audio stopped.');
-    }
-
-    function buildUtterance(text, chunkIndex, totalChunks) {
-      const utter = new SpeechSynthesisUtterance(text);
-      const voice = bestVoice();
-      if (voice) utter.voice = voice;
-      utter.lang = 'en-US';
-
-      const mode = modeNode?.value || 'standard';
-      const config = VOICE_MODE_CONFIG[mode] || VOICE_MODE_CONFIG.standard;
-      utter.rate = config.rate;
-      utter.pitch = config.pitch;
-      utter.volume = config.volume;
-
-      utter.onstart = () => {
-        if (chunks[chunkIndex]) chunks[chunkIndex].classList.add('spoken-active');
-        setStatus(`Speaking section ${chunkIndex + 1} of ${totalChunks}...`);
-      };
-
-      utter.onend = () => {
-        if (chunks[chunkIndex]) chunks[chunkIndex].classList.remove('spoken-active');
-        if (chunkIndex === totalChunks - 1) {
-          setStatus('Audio complete.');
-          currentUtterances = [];
-          isPaused = false;
-        }
-      };
-
-      return utter;
-    }
-
-    function speakText(text) {
-      if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
-        if (window.NutriApp?.speak) {
-          window.NutriApp.speak(text);
-          return;
-        }
-        setStatus('Audio is not supported in this browser.');
+    function speak(text, replay = false) {
+      const message = String(text || '').trim();
+      if (!message) {
+        setStatus('No result selected yet. Run a tool first.');
         return;
       }
 
-      synth.cancel();
-      clearHighlights();
+      if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+        if (window.NutriApp?.speak) window.NutriApp.speak(message);
+        setStatus('Playing with browser fallback voice.');
+        lastSpokenText = message;
+        return;
+      }
 
-      const pieces = splitSpeech(text);
-      currentUtterances = pieces.map((piece, idx) => buildUtterance(piece, Math.min(idx, chunks.length - 1), pieces.length));
-      currentUtterances.forEach((utter) => synth.speak(utter));
-      isPaused = false;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = 'en-US';
+      utterance.voice = chooseVoice();
+      utterance.pitch = 1;
+      utterance.rate = slowMode?.checked ? 0.84 : 0.98;
+
+      utterance.onstart = () => setStatus(replay ? 'Replaying result...' : 'Playing latest result...');
+      utterance.onend = () => setStatus('Voice playback complete.');
+      utterance.onerror = () => setStatus('Voice playback failed.');
+
+      window.speechSynthesis.speak(utterance);
+      lastSpokenText = message;
     }
 
-    function playScript() {
-      if (!chunks.length) return;
-      const text = chunks.map((node) => node.textContent?.trim() || '').filter(Boolean).join(' ');
-      speakText(text);
-    }
-
-    if (playBtn) playBtn.addEventListener('click', playScript);
-
-    if (pauseBtn) {
-      pauseBtn.addEventListener('click', () => {
-        if (!synth) return;
-        if (!synth.speaking && !synth.paused) return;
-
-        if (isPaused) {
-          synth.resume();
-          isPaused = false;
-          setStatus('Audio resumed.');
-        } else {
-          synth.pause();
-          isPaused = true;
-          setStatus('Audio paused.');
-        }
+    if (playBtn) {
+      playBtn.addEventListener('click', () => {
+        speak(latestText, false);
       });
     }
 
-    if (replayBtn) replayBtn.addEventListener('click', playScript);
-    if (stopBtn) stopBtn.addEventListener('click', stopSpeech);
+    if (replayBtn) {
+      replayBtn.addEventListener('click', () => {
+        speak(lastSpokenText || latestText, true);
+      });
+    }
 
-    window.addEventListener('beforeunload', stopSpeech);
-    if (synth) synth.onvoiceschanged = () => {};
+    if (stopBtn) {
+      stopBtn.addEventListener('click', () => {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        setStatus('Voice stopped.');
+      });
+    }
 
-    return { speakText, stopSpeech };
+    window.addEventListener('beforeunload', () => {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+
+    return {
+      setLatest(text) {
+        latestText = String(text || '').trim();
+        if (summaryNode) summaryNode.textContent = latestText || 'No result selected yet.';
+      },
+      speak(text) {
+        speak(text, false);
+      },
+    };
   }
 
-  function initMythChecker(voiceApi) {
+  function buildNextStepEngine() {
+    const node = document.getElementById('action-next-steps');
+    if (!node) {
+      return {
+        update() {},
+      };
+    }
+
+    return {
+      update(payload) {
+        const title = payload?.title || 'Recommended next actions';
+        const summary = payload?.summary || '';
+        const steps = Array.isArray(payload?.steps) ? payload.steps.slice(0, 4) : [];
+
+        node.innerHTML = '';
+
+        const summaryCard = document.createElement('article');
+        summaryCard.className = 'card';
+        summaryCard.innerHTML = `
+          <h4>${escapeHtml(title)}</h4>
+          <p class="small-text">${escapeHtml(summary)}</p>
+        `;
+        node.appendChild(summaryCard);
+
+        if (!steps.length) return;
+
+        steps.forEach((step) => {
+          const card = document.createElement('article');
+          card.className = 'card';
+          card.innerHTML = `
+            <h4>${escapeHtml(step.title || 'Next action')}</h4>
+            <p class="small-text">${escapeHtml(step.desc || '')}</p>
+            <a class="btn btn-secondary btn-small" href="${escapeHtml(step.href || './index.html')}">${escapeHtml(step.cta || 'Open')}</a>
+          `;
+          node.appendChild(card);
+        });
+      },
+    };
+  }
+
+  function initRiskChecker(engine, voice) {
+    const ageNode = document.getElementById('risk-age-group');
+    const contextNode = document.getElementById('risk-food-context');
+    const grid = document.getElementById('risk-factor-grid');
+    const button = document.getElementById('risk-check-btn');
+    const resultNode = document.getElementById('risk-check-result');
+    if (!ageNode || !contextNode || !grid || !button || !resultNode) return;
+
+    const weights = {
+      low_appetite: 4,
+      weight_loss: 5,
+      fatigue: 4,
+      pale_skin: 4,
+      swelling: 8,
+      diarrhea: 4,
+      low_activity: 3,
+      dizziness: 3,
+      confusion: 7,
+      trouble_chewing: 3,
+      missed_meals: 4,
+      afford_protein: 4,
+    };
+
+    const contextWeights = {
+      mixed: 0,
+      limited: 3,
+      processed: 3,
+      low_access: 4,
+    };
+
+    function getSelected() {
+      return [...grid.querySelectorAll('input[type="checkbox"]:checked')].map((box) => box.value);
+    }
+
+    button.addEventListener('click', () => {
+      const ageGroup = ageNode.value;
+      const context = contextNode.value;
+      const selected = getSelected();
+
+      const base = ageGroup === 'older' ? 4 : ageGroup === 'child' ? 3 : 2;
+      const score =
+        base +
+        (contextWeights[context] || 0) +
+        selected.reduce((sum, key) => sum + (weights[key] || 0), 0);
+
+      const has = (key) => selected.includes(key);
+      const urgentPattern =
+        (has('swelling') && has('fatigue')) ||
+        (ageGroup === 'older' && has('weight_loss') && has('confusion')) ||
+        (ageGroup === 'child' && has('low_appetite') && has('fatigue') && has('pale_skin'));
+
+      let level = 'Low risk';
+      let reason = 'Current pattern suggests lower immediate concern, but continue preventive nutrition support.';
+
+      if (urgentPattern || score >= 25) {
+        level = 'High risk';
+        reason = 'Multiple warning signs and household constraints suggest elevated nutrition risk that may worsen without fast action.';
+      } else if (score >= 14) {
+        level = 'Moderate risk';
+        reason = 'There are meaningful warning signals. Household meal quality and follow-up should be strengthened now.';
+      }
+
+      const actionSet = [];
+      if (level === 'High risk') {
+        actionSet.push({ title: 'Find verified support now', desc: 'Open Resource Map and route to available support points.', cta: 'Open Resource Map', href: './map.html' });
+        actionSet.push({ title: 'Run urgency escalation', desc: 'Confirm if this pattern should be treated as urgent.', cta: 'Open Urgency Tool', href: './learn.html#tool-escalation' });
+        actionSet.push({ title: 'Improve meals immediately', desc: 'Use Pantry Rescue to close protein and iron gaps quickly.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' });
+      } else if (level === 'Moderate risk') {
+        actionSet.push({ title: 'Use Pantry Rescue', desc: 'Build a practical meal from available foods today.', cta: 'Run Pantry Rescue', href: './learn.html#tool-pantry-rescue' });
+        actionSet.push({ title: 'Use Budget Planner', desc: 'Prioritize low-cost foods before the next grocery trip.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' });
+        actionSet.push({ title: 'Re-check in 7 days', desc: 'Track whether warning signs are improving.', cta: 'Take Assessment', href: './assessment.html' });
+      } else {
+        actionSet.push({ title: 'Keep meals stable', desc: 'Continue balanced meals and monitor for appetite or weight changes.', cta: 'Open Meal Builder', href: './meal-builder.html' });
+        actionSet.push({ title: 'Plan low-cost upgrades', desc: 'Use Budget Planner to prevent future nutrition decline.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' });
+      }
+
+      resultNode.classList.remove('hide');
+      resultNode.innerHTML = `
+        <div class="result-head">
+          <span class="${badgeClass(level)}">${escapeHtml(level)}</span>
+          <span class="small-text">Risk score: ${score}</span>
+        </div>
+        <p class="small-text"><strong>Why this result:</strong> ${escapeHtml(reason)}</p>
+        <p class="small-text"><strong>Selected signals:</strong> ${escapeHtml(selected.length ? selected.join(', ').replace(/_/g, ' ') : 'None selected')}</p>
+        <div class="tool-action-row">
+          ${actionSet
+            .map(
+              (item) => `<a class="btn btn-secondary btn-small" href="${escapeHtml(item.href)}">${escapeHtml(item.cta)}</a>`,
+            )
+            .join('')}
+        </div>
+      `;
+
+      const voiceSummary = `${level}. ${reason} Next actions: ${actionSet.map((item) => item.title).join('. ')}.`;
+      voice.setLatest(voiceSummary);
+      engine.update({
+        title: `Risk Checker Result: ${level}`,
+        summary: reason,
+        steps: actionSet,
+      });
+    });
+  }
+
+  function initBudgetPlanner(engine, voice) {
+    const budgetNode = document.getElementById('budget-weekly');
+    const sizeNode = document.getElementById('budget-household');
+    const priorityNode = document.getElementById('budget-priority');
+    const applianceNode = document.getElementById('budget-appliances');
+    const button = document.getElementById('budget-plan-btn');
+    const resultNode = document.getElementById('budget-plan-result');
+    if (!budgetNode || !sizeNode || !priorityNode || !applianceNode || !button || !resultNode) return;
+
+    const foods = {
+      protein: ['Eggs', 'Dry beans', 'Lentils', 'Peanut butter', 'Canned tuna', 'Greek yogurt'],
+      iron: ['Lentils', 'Fortified cereal', 'Beans', 'Spinach', 'Chickpeas', 'Canned sardines'],
+      pantry: ['Oats', 'Brown rice', 'Canned beans', 'Peanut butter', 'Shelf-stable milk', 'Whole grain pasta'],
+      produceFallback: ['Frozen mixed vegetables', 'Cabbage', 'Carrots', 'Canned tomatoes', 'Apples', 'Bananas'],
+      readyNoCook: ['Peanut butter + whole grain bread', 'Yogurt + oats', 'Canned fish + crackers', 'Banana + nut butter'],
+    };
+
+    function selectedAppliances() {
+      return [...applianceNode.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value);
+    }
+
+    function rankByPriority(priority) {
+      if (priority === 'protein') return [...foods.protein, ...foods.pantry].slice(0, 7);
+      if (priority === 'iron') return [...foods.iron, ...foods.protein].slice(0, 7);
+      if (priority === 'kid') return ['Eggs', 'Peanut butter', 'Yogurt', 'Oats', 'Bananas', 'Beans', 'Whole grain bread'];
+      if (priority === 'senior') return ['Eggs', 'Yogurt', 'Soft beans', 'Oatmeal', 'Canned tuna', 'Bananas', 'Soup-friendly vegetables'];
+      if (priority === 'pantry') return [...foods.pantry, ...foods.protein].slice(0, 7);
+      return ['Beans', 'Eggs', 'Oats', 'Peanut butter', 'Frozen vegetables', 'Brown rice', 'Fortified cereal'];
+    }
+
+    button.addEventListener('click', () => {
+      const weeklyBudget = Number(budgetNode.value || 0);
+      const householdSize = Number(sizeNode.value || 0);
+      const priority = priorityNode.value;
+      const appliances = selectedAppliances();
+
+      if (!weeklyBudget || !householdSize) {
+        resultNode.classList.remove('hide');
+        resultNode.innerHTML = '<p class="small-text">Enter weekly budget and household size to generate a realistic plan.</p>';
+        return;
+      }
+
+      const perPerson = weeklyBudget / householdSize;
+      const tier = perPerson < 12 ? 'Severe budget pressure' : perPerson < 20 ? 'Tight budget' : 'Moderate budget';
+      const buyFirst = rankByPriority(priority);
+      const proteinTop = foods.protein.slice(0, 4);
+      const ironTop = foods.iron.slice(0, 4);
+      const pantryTop = foods.pantry.slice(0, 5);
+      const hasCookSurface = appliances.includes('stove') || appliances.includes('microwave');
+      const prepMode = hasCookSurface
+        ? 'Cook in batches and reuse leftovers for 2-3 meals.'
+        : 'No-cook strategy detected: prioritize ready proteins and shelf-stable combinations.';
+
+      const actions = [
+        { title: 'Run Pantry Rescue now', desc: 'Convert your current ingredients into a better meal immediately.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+        { title: 'Open Meal Builder', desc: 'Get a larger meal plan after selecting key foods to buy.', cta: 'Open Meal Builder', href: './meal-builder.html' },
+        { title: 'Find food support points', desc: 'If budget is collapsing, route to verified support resources.', cta: 'Open Resource Map', href: './map.html' },
+      ];
+
+      resultNode.classList.remove('hide');
+      resultNode.innerHTML = `
+        <div class="result-head">
+          <span class="${badgeClass(perPerson < 12 ? 'high' : perPerson < 20 ? 'moderate' : 'low')}">${escapeHtml(tier)}</span>
+          <span class="small-text">$${perPerson.toFixed(2)} per person/week</span>
+        </div>
+        <p class="small-text"><strong>Plan focus:</strong> ${escapeHtml(prepMode)}</p>
+        <div class="tool-columns">
+          <div>
+            <h4>Buy these before these</h4>
+            <ol>${buyFirst.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ol>
+          </div>
+          <div>
+            <h4>Best cheap protein options</h4>
+            <ul>${listToHtml(proteinTop.map((item) => escapeHtml(item)), 'No protein list generated.')}</ul>
+            <h4>Best cheap iron-support options</h4>
+            <ul>${listToHtml(ironTop.map((item) => escapeHtml(item)), 'No iron list generated.')}</ul>
+          </div>
+        </div>
+        <h4>Pantry-safe and shelf-stable options</h4>
+        <ul>${listToHtml(pantryTop.map((item) => escapeHtml(item)), 'No pantry list generated.')}</ul>
+        <h4>Swaps if fresh food is unavailable</h4>
+        <ul>${listToHtml(foods.produceFallback.map((item) => escapeHtml(item)), 'No swaps available.')}</ul>
+        ${
+          hasCookSurface
+            ? ''
+            : `<h4>No-cook backup meals</h4><ul>${listToHtml(foods.readyNoCook.map((item) => escapeHtml(item)), 'No no-cook options available.')}</ul>`
+        }
+      `;
+
+      const voiceSummary = `${tier}. Budget planner generated a buy-first list and protein and iron priorities. First actions: Run pantry rescue, open meal builder, and use resource map if access is unstable.`;
+      voice.setLatest(voiceSummary);
+      engine.update({
+        title: `Budget Planner Result: ${tier}`,
+        summary: `Generated a low-cost priority plan for a household of ${householdSize} with weekly budget of $${weeklyBudget}.`,
+        steps: actions,
+      });
+    });
+  }
+
+  function initClaimChecker(engine, voice) {
     const input = document.getElementById('myth-input');
     const checkBtn = document.getElementById('myth-check-btn');
     const clearBtn = document.getElementById('myth-clear-btn');
     const resultNode = document.getElementById('myth-result');
     if (!input || !checkBtn || !clearBtn || !resultNode) return;
 
-    function verdictLabel(verdict) {
-      if (verdict === 'myth') return 'Likely myth';
-      if (verdict === 'depends') return 'Partly true / depends';
-      return 'Likely fact';
-    }
+    const rules = [
+      {
+        keys: ['healthy food', 'too expensive', 'only expensive'],
+        verdict: 'Likely myth',
+        explanation: 'Affordable foods can still build nutrition when you prioritize protein and protective foods first.',
+        corrected: 'Healthy food does not have to be expensive if we choose high-impact staples.',
+        action: 'Use Budget Planner to generate a buy-first list for your budget.',
+        href: './learn.html#tool-budget-planner',
+      },
+      {
+        keys: ['overweight', 'cannot be malnourished', 'cant be malnourished'],
+        verdict: 'Likely myth',
+        explanation: 'A person can have enough calories but still lack protein, iron, or vitamins.',
+        corrected: 'Weight alone does not rule out malnutrition risk.',
+        action: 'Run Risk Checker and Pantry Rescue to assess diet quality and warning signals.',
+        href: './learn.html#tool-risk-checker',
+      },
+      {
+        keys: ['older', 'losing weight is normal', 'seniors naturally eat less'],
+        verdict: 'Partly true / depends',
+        explanation: 'Appetite may change with age, but ongoing weight loss can be a warning sign that needs follow-up.',
+        corrected: 'Some appetite change is expected, but persistent weight loss is not automatically normal.',
+        action: 'Use Urgency Tool and Resource Map if warning signs continue.',
+        href: './learn.html#tool-escalation',
+      },
+      {
+        keys: ['protein only', 'only meat', 'protein comes from meat'],
+        verdict: 'Likely myth',
+        explanation: 'Protein also comes from beans, lentils, eggs, yogurt, tofu, nuts, and canned fish.',
+        corrected: 'Meat is one source, but many affordable non-meat proteins are available.',
+        action: 'Use Budget Planner to prioritize cheaper protein options.',
+        href: './learn.html#tool-budget-planner',
+      },
+      {
+        keys: ['skip meals', 'big dinner', 'skipping meals is fine'],
+        verdict: 'Partly true / depends',
+        explanation: 'Frequent meal skipping can worsen fatigue and nutrient gaps, especially in children and older adults.',
+        corrected: 'Smaller consistent meals are usually safer than long meal gaps.',
+        action: 'Use Pantry Rescue to build quick low-cost meals from what you already have.',
+        href: './learn.html#tool-pantry-rescue',
+      },
+    ];
 
-    function verdictClass(verdict) {
-      if (verdict === 'myth') return 'claim-badge-myth';
-      if (verdict === 'depends') return 'claim-badge-depends';
-      return 'claim-badge-fact';
-    }
-
-    function findRule(text) {
+    function detectRule(text) {
       const normalized = normalizeText(text);
-      return CLAIM_RULES.find((rule) => rule.keys.some((key) => normalized.includes(normalizeText(key))));
-    }
-
-    function renderClaimResult(rule, originalClaim) {
-      const safeFallback = {
-        verdict: 'depends',
-        explanation: 'We cannot fully verify that exact claim yet from this quick checker.',
-        takeaway: 'Use a safer rule: build meals with protein + protective foods and watch warning signs early.',
-        safer: 'A full plate is not always a nourished plate. Focus on nutrient quality, not only calories.',
-      };
-
-      const output = rule || safeFallback;
-      resultNode.classList.remove('hide');
-      resultNode.innerHTML = `
-        <div class="claim-result-head">
-          <span class="tag ${verdictClass(output.verdict)}">${verdictLabel(output.verdict)}</span>
-        </div>
-        <p class="small-text"><strong>Claim:</strong> ${escapeHtml(originalClaim)}</p>
-        <p class="small-text"><strong>Why:</strong> ${escapeHtml(output.explanation)}</p>
-        <p class="small-text"><strong>What to do instead:</strong> ${escapeHtml(output.takeaway)}</p>
-        <div class="alert alert-success"><strong>Safer wording:</strong> ${escapeHtml(output.safer)}</div>
-        <div class="cta-row" style="margin-top: 0.65rem;">
-          <button type="button" class="btn btn-secondary btn-small" id="claim-listen">Listen</button>
-        </div>
-      `;
-
-      const listenBtn = document.getElementById('claim-listen');
-      if (listenBtn) {
-        listenBtn.addEventListener('click', () => {
-          voiceApi.speakText(
-            `Claim check result. ${verdictLabel(output.verdict)}. ${output.explanation}. What to do instead. ${output.takeaway}. Safer wording: ${output.safer}`
-          );
-        });
-      }
+      return rules.find((rule) => rule.keys.some((key) => normalized.includes(normalizeText(key))));
     }
 
     checkBtn.addEventListener('click', () => {
       const claim = String(input.value || '').trim();
       if (!claim) {
         resultNode.classList.remove('hide');
-        resultNode.innerHTML = '<p class="small-text">Type a claim first so NutriPath can check it.</p>';
+        resultNode.innerHTML = '<p class="small-text">Enter a claim first to run the checker.</p>';
         return;
       }
-      const matchedRule = findRule(claim);
-      renderClaimResult(matchedRule, claim);
+
+      const match = detectRule(claim);
+      const fallback = {
+        verdict: 'Partly true / depends',
+        explanation: 'We cannot fully verify that exact claim yet with this quick checker.',
+        corrected: 'Use a safer rule: prioritize protein, iron support, and warning-sign tracking.',
+        action: 'Use Risk Checker or Budget Planner for a decision-ready next step.',
+        href: './learn.html#tool-risk-checker',
+      };
+
+      const output = match || fallback;
+      const actions = [
+        { title: 'Run linked tool', desc: output.action, cta: 'Open tool', href: output.href },
+        { title: 'Improve meals now', desc: 'Use Pantry Rescue with foods currently available.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+      ];
+
+      resultNode.classList.remove('hide');
+      resultNode.innerHTML = `
+        <div class="result-head">
+          <span class="${badgeClass(output.verdict)}">${escapeHtml(output.verdict)}</span>
+        </div>
+        <p class="small-text"><strong>Claim:</strong> ${escapeHtml(claim)}</p>
+        <p class="small-text"><strong>Why:</strong> ${escapeHtml(output.explanation)}</p>
+        <p class="small-text"><strong>Corrected version:</strong> ${escapeHtml(output.corrected)}</p>
+        <div class="tool-action-row">
+          <a class="btn btn-secondary btn-small" href="${escapeHtml(output.href)}">Take practical action</a>
+        </div>
+      `;
+
+      const voiceSummary = `${output.verdict}. ${output.explanation} Corrected statement: ${output.corrected}.`;
+      voice.setLatest(voiceSummary);
+      engine.update({
+        title: `Claim Checker: ${output.verdict}`,
+        summary: output.explanation,
+        steps: actions,
+      });
     });
 
     clearBtn.addEventListener('click', () => {
@@ -425,7 +479,98 @@
     });
   }
 
-  function initFoodBuilder() {
+  function initEscalationTool(engine, voice) {
+    const memberNode = document.getElementById('escalation-member');
+    const accessNode = document.getElementById('escalation-access');
+    const signsNode = document.getElementById('escalation-signs');
+    const button = document.getElementById('escalation-check-btn');
+    const resultNode = document.getElementById('escalation-result');
+    if (!memberNode || !accessNode || !signsNode || !button || !resultNode) return;
+
+    const signWeights = {
+      poor_appetite: 3,
+      weight_loss: 5,
+      fatigue: 4,
+      pale_skin: 4,
+      swelling: 8,
+      confusion: 8,
+      missed_meals: 4,
+      low_food_access: 4,
+    };
+
+    function selectedSigns() {
+      return [...signsNode.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value);
+    }
+
+    button.addEventListener('click', () => {
+      const member = memberNode.value;
+      const access = accessNode.value;
+      const selected = selectedSigns();
+
+      const has = (key) => selected.includes(key);
+      let score = selected.reduce((sum, key) => sum + (signWeights[key] || 0), 0);
+      if (access === 'limited') score += 2;
+      if (access === 'none') score += 4;
+
+      const urgentPattern =
+        (member === 'older' && has('weight_loss') && has('confusion')) ||
+        (member === 'child' && has('poor_appetite') && has('fatigue') && has('pale_skin')) ||
+        (has('swelling') && has('fatigue')) ||
+        (has('missed_meals') && has('low_food_access') && has('weight_loss'));
+
+      let level = 'Monitor at home';
+      let explanation = 'No severe pattern detected right now. Continue close monitoring and improve meal quality.';
+      if (urgentPattern || score >= 18) {
+        level = 'Urgent evaluation recommended';
+        explanation = 'A concerning warning pattern is present. Fast in-person follow-up is safer.';
+      } else if (score >= 12) {
+        level = 'Find support this week';
+        explanation = 'Warning signals and access barriers suggest support should be arranged this week.';
+      } else if (score >= 7) {
+        level = 'Improve meals now';
+        explanation = 'There are early warning signals. Upgrade protein and iron support now and re-check soon.';
+      }
+
+      const actions = [];
+      if (level === 'Urgent evaluation recommended') {
+        actions.push({ title: 'Route to verified support now', desc: 'Use Resource Map immediately.', cta: 'Open Resource Map', href: './map.html' });
+        actions.push({ title: 'Prepare quick nutrition support', desc: 'Use Pantry Rescue while arranging follow-up.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' });
+      } else if (level === 'Find support this week') {
+        actions.push({ title: 'Check nearby support points', desc: 'Find clinics or food support services this week.', cta: 'Open Resource Map', href: './map.html' });
+        actions.push({ title: 'Stabilize household meals', desc: 'Use Budget Planner and Pantry Rescue for immediate meal upgrades.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' });
+      } else if (level === 'Improve meals now') {
+        actions.push({ title: 'Run Pantry Rescue', desc: 'Prioritize protein and protective foods in next meal.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' });
+        actions.push({ title: 'Re-check symptoms', desc: 'Re-run this tool after 3-7 days.', cta: 'Re-run in Action Hub', href: './learn.html#tool-escalation' });
+      } else {
+        actions.push({ title: 'Keep monitoring', desc: 'Track appetite, energy, and meal consistency.', cta: 'Take Assessment', href: './assessment.html' });
+      }
+
+      resultNode.classList.remove('hide');
+      resultNode.innerHTML = `
+        <div class="result-head">
+          <span class="${badgeClass(level)}">${escapeHtml(level)}</span>
+          <span class="small-text">Escalation score: ${score}</span>
+        </div>
+        <p class="small-text"><strong>Why this guidance:</strong> ${escapeHtml(explanation)}</p>
+        <p class="small-text"><strong>Checked signs:</strong> ${escapeHtml(selected.length ? selected.join(', ').replace(/_/g, ' ') : 'No signs selected')}</p>
+        <div class="tool-action-row">
+          ${actions
+            .map((item) => `<a class="btn btn-secondary btn-small" href="${escapeHtml(item.href)}">${escapeHtml(item.cta)}</a>`)
+            .join('')}
+        </div>
+      `;
+
+      const voiceSummary = `${level}. ${explanation} Next actions: ${actions.map((item) => item.title).join('. ')}.`;
+      voice.setLatest(voiceSummary);
+      engine.update({
+        title: `Escalation Result: ${level}`,
+        summary: explanation,
+        steps: actions,
+      });
+    });
+  }
+
+  function initPantryRescue(engine, voice) {
     const input = document.getElementById('hub-food-input');
     const datalist = document.getElementById('hub-food-options');
     const addButton = document.getElementById('hub-add-food');
@@ -434,49 +579,45 @@
     const selectedNode = document.getElementById('hub-selected-foods');
     const statusNode = document.getElementById('hub-food-status');
     const resultShell = document.getElementById('hub-food-results');
+
     const mealList = document.getElementById('hub-meal-list');
+    const betterList = document.getElementById('hub-better-list');
     const nutrientList = document.getElementById('hub-nutrient-list');
     const gapList = document.getElementById('hub-gap-list');
     const addonList = document.getElementById('hub-addon-list');
     const swapList = document.getElementById('hub-swap-list');
+    const easyFixNode = document.getElementById('hub-easy-fix');
+    const qualityNode = document.getElementById('hub-quality-result');
     const nextStepsNode = document.getElementById('hub-next-steps');
 
-    if (!input || !datalist || !addButton || !clearButton || !analyzeButton || !selectedNode || !statusNode || !resultShell || !mealList || !nutrientList || !gapList || !addonList || !swapList || !nextStepsNode) {
+    if (!input || !datalist || !addButton || !clearButton || !analyzeButton || !selectedNode || !statusNode || !resultShell || !mealList || !gapList || !swapList || !nextStepsNode) {
       return;
     }
 
+    const foods = (window.NutriData?.foods || []).slice().sort((a, b) => a.name.localeCompare(b.name));
     const selectedFoods = new Map();
-    const foods = NutriData.foods.slice().sort((a, b) => a.name.localeCompare(b.name));
     let customCounter = 1;
 
-    const nutrientTitles = {
+    const nutrientTitle = {
       protein: 'Protein',
       iron: 'Iron',
       zinc: 'Zinc',
       calories: 'Calories',
       vitaminA: 'Vitamin A',
       vitaminC: 'Vitamin C',
-      folate: 'Folate',
-      calcium: 'Calcium',
-      carbs: 'Carbohydrates',
       fiber: 'Fiber',
+      carbs: 'Carbohydrates',
       fat: 'Healthy fats',
-      omega3: 'Omega-3 fats',
     };
 
-    const criticalNutrients = ['protein', 'iron', 'vitaminA', 'vitaminC', 'fiber', 'zinc', 'calories'];
-
-    const processedKeywords = ['chips', 'cookie', 'instant noodle', 'ramen', 'soda', 'fries', 'candy'];
+    const criticalNutrients = ['protein', 'iron', 'vitaminA', 'vitaminC', 'fiber', 'calories'];
+    const processedKeywords = ['chips', 'cookie', 'soda', 'instant noodle', 'ramen', 'candy', 'pastry'];
 
     function foodLabel(food) {
       if (food.custom) return food.name;
       const key = `food_${food.id}`;
       const translated = t(key);
       return translated === key ? food.name : translated;
-    }
-
-    function nutrientLabel(key) {
-      return nutrientTitles[key] || key;
     }
 
     function setStatus(text) {
@@ -495,12 +636,11 @@
     function inferCustomNutrients(name) {
       const text = normalizeText(name);
       const nutrients = new Set();
-
       const rules = [
-        { words: ['beans', 'lentil', 'egg', 'tuna', 'fish', 'chicken', 'turkey', 'tofu', 'peanut', 'yogurt', 'milk'], nutrients: ['protein'] },
-        { words: ['rice', 'bread', 'pasta', 'potato', 'oat', 'cereal', 'tortilla'], nutrients: ['carbs', 'calories'] },
-        { words: ['spinach', 'kale', 'broccoli', 'carrot', 'pepper', 'tomato', 'orange', 'fruit', 'vegetable'], nutrients: ['vitaminA', 'vitaminC', 'fiber'] },
-        { words: ['nut', 'seed', 'avocado', 'oil', 'butter'], nutrients: ['fat', 'calories'] },
+        { words: ['bean', 'lentil', 'egg', 'fish', 'tuna', 'chicken', 'tofu', 'yogurt', 'milk', 'peanut'], nutrients: ['protein'] },
+        { words: ['rice', 'bread', 'pasta', 'potato', 'oat', 'cereal', 'tortilla', 'noodle'], nutrients: ['carbs', 'calories'] },
+        { words: ['spinach', 'kale', 'broccoli', 'carrot', 'pepper', 'tomato', 'orange', 'fruit', 'vegetable', 'cabbage'], nutrients: ['vitaminA', 'vitaminC', 'fiber'] },
+        { words: ['nut', 'seed', 'avocado', 'oil'], nutrients: ['fat', 'calories'] },
       ];
 
       rules.forEach((rule) => {
@@ -515,10 +655,10 @@
 
     function makeCustomFood(raw) {
       const clean = String(raw || '').trim();
-      const titled = clean
+      const display = clean
         .split(/\s+/)
         .filter(Boolean)
-        .map((part) => part[0].toUpperCase() + part.slice(1).toLowerCase())
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
         .join(' ');
 
       const id = `custom_${customCounter++}`;
@@ -526,10 +666,10 @@
         id,
         key: id,
         custom: true,
-        name: titled,
-        nutrients: inferCustomNutrients(titled),
+        name: display,
+        nutrients: inferCustomNutrients(display),
         cost: 1.6,
-        score: 52,
+        score: 48,
       };
     }
 
@@ -540,98 +680,42 @@
       const exact = foods.find((food) => normalizeText(food.name) === query || normalizeText(foodLabel(food)) === query);
       if (exact) return { ...exact, key: exact.id, custom: false };
 
-      const near = foods.find((food) => normalizeText(food.name).includes(query) || normalizeText(foodLabel(food)).includes(query));
-      if (near) return { ...near, key: near.id, custom: false };
+      const partial = foods.find((food) => normalizeText(food.name).includes(query) || normalizeText(foodLabel(food)).includes(query));
+      if (partial) return { ...partial, key: partial.id, custom: false };
 
       return makeCustomFood(raw);
     }
 
     function renderSelectedFoods() {
       selectedNode.innerHTML = '';
-      const all = [...selectedFoods.values()];
-      if (!all.length) {
-        setStatus('No foods added yet. Add foods you currently have at home.');
+      const list = [...selectedFoods.values()];
+      if (!list.length) {
+        setStatus('Add foods currently available at home to run rescue planning.');
         return;
       }
 
-      all.forEach((food) => {
+      list.forEach((food) => {
         const chip = document.createElement('span');
         chip.className = 'selected-food-chip';
         chip.innerHTML = `${escapeHtml(foodLabel(food))} <button type="button" data-remove-food="${food.key}" aria-label="Remove ${escapeHtml(foodLabel(food))}">x</button>`;
         selectedNode.appendChild(chip);
       });
-      setStatus(`Selected ${all.length} food item(s). Click Build Meal Plan.`);
+
+      setStatus(`${list.length} food item(s) selected. Run rescue plan.`);
     }
 
-    function addFood() {
-      const value = String(input.value || '').trim();
-      const resolved = resolveFood(value);
-      if (!resolved) {
-        setStatus('Type a food first, then click Add Food.');
-        return;
-      }
-      selectedFoods.set(resolved.key, resolved);
-      input.value = '';
-      renderSelectedFoods();
-      resultShell.classList.add('hide');
-    }
-
-    function clearResults() {
-      [mealList, nutrientList, gapList, addonList, swapList].forEach((node) => {
-        node.innerHTML = '';
+    function clearOutputs() {
+      [mealList, betterList, nutrientList, gapList, addonList, swapList].forEach((node) => {
+        if (node) node.innerHTML = '';
       });
+      if (easyFixNode) easyFixNode.textContent = '';
+      if (qualityNode) qualityNode.innerHTML = '';
       nextStepsNode.innerHTML = '';
     }
 
-    function listToNode(node, items, emptyText) {
-      node.innerHTML = '';
-      if (!items.length) {
-        const li = document.createElement('li');
-        li.textContent = emptyText;
-        node.appendChild(li);
-        return;
-      }
-      items.forEach((item) => {
-        const li = document.createElement('li');
-        li.innerHTML = item;
-        node.appendChild(li);
-      });
-    }
-
-    function categorizeFoods(foodList) {
-      const hasNutrient = (food, nutrient) => food.nutrients.includes(nutrient);
-      return {
-        protein: foodList.filter((food) => hasNutrient(food, 'protein')),
-        energy: foodList.filter((food) => hasNutrient(food, 'carbs') || hasNutrient(food, 'calories')),
-        protective: foodList.filter((food) => hasNutrient(food, 'vitaminA') || hasNutrient(food, 'vitaminC') || hasNutrient(food, 'fiber') || hasNutrient(food, 'iron')),
-      };
-    }
-
-    function mealIdeas(foodList) {
-      const groups = categorizeFoods(foodList);
-      const ideas = [];
-
-      function first(list) {
-        return list.length ? list[0] : null;
-      }
-
-      const protein = first(groups.protein) || first(foodList);
-      const energy = first(groups.energy) || first(foodList);
-      const protective = first(groups.protective) || first(foodList);
-
-      if (protein && energy && protective) {
-        ideas.push(`<strong>Balanced pantry bowl</strong><br/>Use ${escapeHtml(foodLabel(energy))} as base, add ${escapeHtml(foodLabel(protein))}, then top with ${escapeHtml(foodLabel(protective))}.`);
-      }
-
-      if (groups.protein.length >= 1 && groups.protective.length >= 1) {
-        ideas.push(`<strong>Protein + protective plate</strong><br/>Cook ${escapeHtml(foodLabel(groups.protein[0]))} and add ${escapeHtml(foodLabel(groups.protective[0]))}. Serve with any available starch.`);
-      }
-
-      if (foodList.length >= 2) {
-        ideas.push(`<strong>Fast mix meal</strong><br/>Combine ${escapeHtml(foodLabel(foodList[0]))} and ${escapeHtml(foodLabel(foodList[1]))}, then add one produce or bean item if available.`);
-      }
-
-      return ideas.slice(0, 3);
+    function renderList(node, items, emptyText) {
+      if (!node) return;
+      node.innerHTML = listToHtml(items, emptyText);
     }
 
     function analyzeCoverage(foodList) {
@@ -640,101 +724,180 @@
         food.nutrients.forEach((nutrient) => {
           if (!coverage.has(nutrient)) coverage.set(nutrient, []);
           coverage.get(nutrient).push(foodLabel(food));
-          if (nutrient === 'carbs' || nutrient === 'fat') {
-            if (!coverage.has('calories')) coverage.set('calories', []);
-            coverage.get('calories').push(foodLabel(food));
+          if ((nutrient === 'carbs' || nutrient === 'fat') && !coverage.has('calories')) {
+            coverage.set('calories', [foodLabel(food)]);
           }
         });
       });
       return coverage;
     }
 
-    function analyzeFoods() {
+    function buildRescueMeals(foodList) {
+      const hasNutrient = (food, nutrient) => food.nutrients.includes(nutrient);
+      const proteins = foodList.filter((food) => hasNutrient(food, 'protein'));
+      const energy = foodList.filter((food) => hasNutrient(food, 'carbs') || hasNutrient(food, 'calories'));
+      const protective = foodList.filter(
+        (food) => hasNutrient(food, 'vitaminA') || hasNutrient(food, 'vitaminC') || hasNutrient(food, 'fiber') || hasNutrient(food, 'iron'),
+      );
+
+      const p = proteins[0] || foodList[0];
+      const e = energy[0] || foodList[0];
+      const v = protective[0] || foodList[Math.min(1, foodList.length - 1)] || foodList[0];
+
+      const bestNow = [
+        `<strong>Rescue bowl:</strong> warm ${escapeHtml(foodLabel(e))}, add ${escapeHtml(foodLabel(p))}, then add ${escapeHtml(foodLabel(v))}.`,
+      ];
+
+      if (foodList.length >= 2) {
+        bestNow.push(`<strong>Quick plate:</strong> pair ${escapeHtml(foodLabel(foodList[0]))} with ${escapeHtml(foodLabel(foodList[1]))}, then add any vegetable or bean item.`);
+      }
+
+      return bestNow;
+    }
+
+    function runRescue() {
       const selected = [...selectedFoods.values()];
       if (!selected.length) {
-        setStatus('Add at least one food to analyze.');
+        setStatus('Add at least one food to run rescue planning.');
         resultShell.classList.add('hide');
         return;
       }
 
-      const ideas = mealIdeas(selected);
       const coverage = analyzeCoverage(selected);
+      const bestNow = buildRescueMeals(selected);
 
-      const strengths = [...coverage.entries()]
-        .filter(([nutrient]) => criticalNutrients.includes(nutrient))
-        .sort((a, b) => b[1].length - a[1].length)
+      const strengths = [...coverage.keys()]
+        .filter((nutrient) => criticalNutrients.includes(nutrient))
         .slice(0, 5)
-        .map(([nutrient, foodNames]) => `<strong>${nutrientLabel(nutrient)}:</strong> ${escapeHtml([...new Set(foodNames)].slice(0, 3).join(', '))}`);
+        .map((nutrient) => `<strong>${escapeHtml(nutrientTitle[nutrient] || nutrient)}:</strong> available now`);
 
       const gaps = criticalNutrients
         .filter((nutrient) => !coverage.has(nutrient))
         .map((nutrient) => {
-          const guidance = nutrient === 'protein'
-            ? 'Add a low-cost protein soon (beans, eggs, canned fish, peanut butter).'
-            : nutrient === 'iron'
-              ? 'Add iron support (lentils, beans, fortified cereal, leafy greens).'
-              : nutrient === 'vitaminA'
-                ? 'Add orange/dark-green produce or frozen vegetables.'
-                : nutrient === 'vitaminC'
-                  ? 'Add fruit or tomato/pepper/cabbage when available.'
-                  : nutrient === 'fiber'
-                    ? 'Add oats, beans, whole grains, or vegetables.'
-                    : nutrient === 'calories'
-                      ? 'Add enough energy foods so meals are not too small.'
-                      : 'Add variety across food groups.';
-          return `<strong>${nutrientLabel(nutrient)} gap:</strong> ${guidance}`;
+          const msg =
+            nutrient === 'protein'
+              ? 'Add low-cost protein (beans, eggs, peanut butter, canned fish).'
+              : nutrient === 'iron'
+                ? 'Add iron support (lentils, beans, fortified cereal, spinach).'
+                : nutrient === 'vitaminA'
+                  ? 'Add orange/dark-green produce or frozen vegetables.'
+                  : nutrient === 'vitaminC'
+                    ? 'Add tomato, citrus, cabbage, or fruit.'
+                    : nutrient === 'fiber'
+                      ? 'Add oats, beans, whole grains, or vegetables.'
+                      : 'Add an energy food so meals are filling enough.';
+          return `<strong>${escapeHtml(nutrientTitle[nutrient] || nutrient)}:</strong> ${escapeHtml(msg)}`;
         });
 
-      const knownSelectedIds = new Set(selected.filter((food) => !food.custom).map((food) => food.id));
-      const addNext = foods
-        .filter((food) => !knownSelectedIds.has(food.id))
-        .map((food) => {
-          const matched = criticalNutrients.filter((n) => food.nutrients.includes(n) || ((n === 'calories') && (food.nutrients.includes('carbs') || food.nutrients.includes('fat'))));
-          return { food, matched: [...new Set(matched)] };
-        })
-        .filter((entry) => entry.matched.length)
-        .sort((a, b) => b.matched.length - a.matched.length || a.food.cost - b.food.cost)
-        .slice(0, 6)
-        .map((entry) => `<strong>${escapeHtml(foodLabel(entry.food))}</strong> (${entry.food.cost.toFixed(2)} est.) -> ${escapeHtml(entry.matched.map(nutrientLabel).join(', '))}`);
+      const lowCostAdds = [
+        'Eggs',
+        'Dry beans',
+        'Lentils',
+        'Peanut butter',
+        'Canned tuna',
+        'Frozen mixed vegetables',
+      ];
 
-      const swaps = [];
-      if (!coverage.has('protein')) swaps.push('No protein item detected: try eggs, beans, lentils, peanut butter, canned tuna, or yogurt.');
-      if (!coverage.has('vitaminA')) swaps.push('Missing protective produce: try frozen mixed vegetables, cabbage, carrots, or canned pumpkin.');
-      if (!coverage.has('iron')) swaps.push('Need iron support: try lentils, fortified cereal, beans, spinach, or chicken liver.');
-      if (!coverage.has('fiber')) swaps.push('Too refined/carbohydrate-heavy: swap some white starch with oats, beans, brown rice, or vegetables.');
+      const betterVersion = [
+        `<strong>Upgrade option:</strong> keep your current meal and add one protein (${escapeHtml(lowCostAdds[0])} or ${escapeHtml(lowCostAdds[1])}) plus one protective food (${escapeHtml(lowCostAdds[5])}).`,
+        `<strong>If budget is tight:</strong> add ${escapeHtml(lowCostAdds[3])} to breakfast and ${escapeHtml(lowCostAdds[2])} to one main meal this week.`,
+      ];
 
-      const selectedText = selected.map((food) => normalizeText(food.name)).join(' ');
-      const processedHits = processedKeywords.filter((word) => selectedText.includes(word));
+      const swaps = [
+        'No fresh vegetables? Use frozen mixed vegetables or cabbage.',
+        'No meat? Use beans, lentils, eggs, tofu, or canned fish.',
+        'Only refined carbs at home? Add beans or peanut butter to reduce nutrient gaps.',
+      ];
+
+      const normalizedSelected = normalizeText(selected.map((item) => item.name).join(' '));
+      const processedHits = processedKeywords.filter((word) => normalizedSelected.includes(word));
       if (processedHits.length) {
-        swaps.push('Several highly processed foods detected. Keep them if needed, but add one protein and one protective food in the same meal.');
+        swaps.push('Processed-food heavy pattern detected. Keep current foods if needed, but pair each meal with protein + one protective food.');
       }
 
-      listToNode(mealList, ideas, 'No meal idea generated yet. Add at least two foods.');
-      listToNode(nutrientList, strengths, 'No clear strengths yet. Add more foods for better analysis.');
-      listToNode(gapList, gaps, 'Core nutrient coverage looks good right now. Keep rotating foods for diversity.');
-      listToNode(addonList, addNext, 'No add-on suggestions yet.');
-      listToNode(swapList, swaps, 'No major swaps needed right now.');
+      const qualityScore =
+        (coverage.has('protein') ? 2 : 0) +
+        (coverage.has('iron') ? 1 : 0) +
+        (coverage.has('vitaminA') || coverage.has('vitaminC') ? 1 : 0) +
+        (selected.length >= 3 ? 1 : 0) -
+        (processedHits.length ? 1 : 0);
+
+      const qualityText = qualityScore >= 4 ? 'Good enough for now' : 'Needs improvement';
+      const qualityMessage =
+        qualityScore >= 4
+          ? 'Current foods can support a workable meal today. Keep improving with one extra protein or protective food.'
+          : 'Current foods are likely too weak in key nutrients. Add one low-cost protein and one protective food as soon as possible.';
+
+      renderList(mealList, bestNow, 'Add more foods to generate meal rescue ideas.');
+      renderList(betterList, betterVersion, 'No improved version generated yet.');
+      renderList(nutrientList, strengths, 'No clear strengths detected yet.');
+      renderList(gapList, gaps, 'No major nutrient gaps detected in this quick check.');
+      renderList(addonList, lowCostAdds.map((item) => escapeHtml(item)), 'No add-on suggestions available.');
+      renderList(swapList, swaps.map((item) => escapeHtml(item)), 'No swap suggestions available.');
+
+      if (easyFixNode) {
+        easyFixNode.innerHTML = `<strong>Easiest affordable improvement:</strong> Add one protein food in your next meal and one protective food before end of day.`;
+      }
+
+      if (qualityNode) {
+        qualityNode.innerHTML = `
+          <div class="result-head">
+            <span class="${badgeClass(qualityText)}">${escapeHtml(qualityText)}</span>
+          </div>
+          <p class="small-text">${escapeHtml(qualityMessage)}</p>
+        `;
+      }
 
       nextStepsNode.innerHTML = `
-        <p><strong>Next step 1:</strong> Build one meal from "Best meal idea now" tonight.</p>
-        <p><strong>Next step 2:</strong> Add one item from "Cheapest helpful foods to add" this week.</p>
-        <p><strong>Next step 3:</strong> <a href="./learn.html#claim-checker">Check a nutrition claim</a> if someone in the household is unsure what is true.</p>
-        <p><strong>Next step 4:</strong> <a href="./map.html">Find local support</a> if food access is unstable.</p>
+        <p><strong>Next step 1:</strong> Make the rescue meal today.</p>
+        <p><strong>Next step 2:</strong> Add one cheap protein this week.</p>
+        <p><strong>Next step 3:</strong> <a href="./learn.html#tool-risk-checker">Run Risk Checker</a> if warning signs are present.</p>
+        <p><strong>Next step 4:</strong> <a href="./map.html">Open Resource Map</a> if access is unstable.</p>
       `;
 
       resultShell.classList.remove('hide');
-      setStatus(`Meal analysis ready for ${selected.length} food item(s).`);
+      setStatus(`Rescue plan ready for ${selected.length} food item(s).`);
+
+      const nextSteps = [
+        { title: 'Check household risk', desc: 'Use Risk Checker if symptoms or low appetite are present.', cta: 'Open Risk Checker', href: './learn.html#tool-risk-checker' },
+        { title: 'Plan low-cost groceries', desc: 'Use Budget Planner to stabilize nutrition this week.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' },
+        { title: 'Find support if access is unstable', desc: 'Locate verified clinics and food support.', cta: 'Open Resource Map', href: './map.html' },
+      ];
+
+      const voiceSummary = `${qualityText}. ${qualityMessage} Best action now: make the rescue meal, then add one cheap protein and one protective food.`;
+      voice.setLatest(voiceSummary);
+      engine.update({
+        title: `Pantry Rescue: ${qualityText}`,
+        summary: qualityMessage,
+        steps: nextSteps,
+      });
+    }
+
+    function addFood() {
+      const raw = String(input.value || '').trim();
+      const resolved = resolveFood(raw);
+      if (!resolved) {
+        setStatus('Type a food first, then click Add food.');
+        return;
+      }
+
+      selectedFoods.set(resolved.key, resolved);
+      input.value = '';
+      renderSelectedFoods();
+      clearOutputs();
+      resultShell.classList.add('hide');
     }
 
     addButton.addEventListener('click', addFood);
+    analyzeButton.addEventListener('click', runRescue);
+
     clearButton.addEventListener('click', () => {
       selectedFoods.clear();
       input.value = '';
-      clearResults();
+      clearOutputs();
       resultShell.classList.add('hide');
       renderSelectedFoods();
     });
-    analyzeButton.addEventListener('click', analyzeFoods);
 
     input.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
@@ -750,8 +913,8 @@
       if (!removeId) return;
       selectedFoods.delete(removeId);
       renderSelectedFoods();
+      clearOutputs();
       resultShell.classList.add('hide');
-      clearResults();
     });
 
     window.addEventListener('nutri:lang-changed', renderFoodOptions);
@@ -760,8 +923,12 @@
     renderSelectedFoods();
   }
 
-  const voiceApi = initVoiceAssistant() || { speakText: (text) => window.NutriApp?.speak?.(text), stopSpeech: () => {} };
-  initLessonCards(voiceApi);
-  initMythChecker(voiceApi);
-  initFoodBuilder();
+  const voice = buildVoiceSupport();
+  const engine = buildNextStepEngine();
+
+  initRiskChecker(engine, voice);
+  initBudgetPlanner(engine, voice);
+  initPantryRescue(engine, voice);
+  initEscalationTool(engine, voice);
+  initClaimChecker(engine, voice);
 })();
