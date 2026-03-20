@@ -233,11 +233,27 @@
  </article>
  </section>
 
- <section class="section grid-2" id="voice-support">
- <article class="card tool-card">
- <h3>Voice Result Support</h3>
- <p class="small-text">Accessibility mode for low-literacy users. Voice reads short result summaries, not long lesson text.</p>
+<section class="section grid-2" id="voice-support">
+<article class="card tool-card">
+<h3>Voice Result Support</h3>
+<p class="small-text">Accessibility mode for low-literacy users. Voice reads short result summaries, not long lesson text.</p>
+ <div class="form-grid">
+ <div class="field">
+ <label for="voice-provider-select">Voice engine</label>
+ <select id="voice-provider-select">
+ <option value="cloud">Voice.ai cloud</option>
+ <option value="browser">Browser fallback</option>
+ </select>
+ </div>
+ <div class="field">
+ <label for="voice-id-select">Voice profile</label>
+ <select id="voice-id-select">
+ <option value="">Default built-in voice</option>
+ </select>
+ </div>
+ </div>
  <div class="cta-row">
+ <button id="voice-refresh-voices" class="btn btn-secondary" type="button">Refresh voices</button>
  <button id="voice-play-result" class="btn btn-primary" type="button">Play result</button>
  <button id="voice-replay-result" class="btn btn-secondary" type="button">Replay</button>
  <button id="voice-stop-result" class="btn btn-secondary" type="button">Stop</button>

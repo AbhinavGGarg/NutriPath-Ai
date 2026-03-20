@@ -7140,18 +7140,82 @@
  return { user, storage, historyKey, currentKey };
  }
 
- function ensureSettingsLink() {
- const navLinks = document.querySelector('.nav-links');
- if (!navLinks) return;
- if (navLinks.querySelector('[data-nav="settings"]')) return;
+ function createLanguageWidget() {
+ const nav = document.querySelector('.nav');
+ if (!nav) return;
 
- const link = document.createElement('a');
- link.className = 'nav-link';
- link.dataset.nav = 'settings';
- link.dataset.i18n = 'nav_settings';
- link.href = './settings.html';
- link.textContent = t('nav_settings');
- navLinks.appendChild(link);
+ const existing = document.getElementById('lang-widget');
+ if (existing) existing.remove();
+
+ const widget = document.createElement('div');
+ widget.id = 'lang-widget';
+ widget.className = 'lang-widget';
+
+ const input = document.createElement('input');
+ input.id = 'lang-widget-input';
+ input.setAttribute('list', 'lang-widget-options');
+ input.setAttribute('autocomplete', 'off');
+ input.setAttribute('aria-label', t('settings_language_label'));
+ input.placeholder = t('settings_language_search_placeholder');
+
+ const optionsNode = document.createElement('datalist');
+ optionsNode.id = 'lang-widget-options';
+
+ const button = document.createElement('button');
+ button.type = 'button';
+ button.className = 'btn btn-secondary btn-small';
+ button.textContent = t('settings_language_apply');
+
+ widget.appendChild(input);
+ widget.appendChild(optionsNode);
+ widget.appendChild(button);
+
+ const sortedLangs = UI_LANGS.slice().sort((a, b) => a.label.localeCompare(b.label));
+ sortedLangs.forEach((lang) => {
+ const option = document.createElement('option');
+ option.value = lang.label;
+ optionsNode.appendChild(option);
+ });
+
+ const current = UI_LANGS.find((lang) => lang.code === currentLang);
+ if (current) input.value = current.label;
+
+ function resolveCode(rawValue) {
+ const text = String(rawValue || '').trim();
+ if (!text) return null;
+
+ const lower = text.toLowerCase();
+ const exactCode = UI_LANGS.find((lang) => lang.code.toLowerCase() === lower);
+ if (exactCode) return exactCode.code;
+
+ const exactLabel = UI_LANGS.find((lang) => lang.label.toLowerCase() === lower || lang.native.toLowerCase() === lower);
+ if (exactLabel) return exactLabel.code;
+
+ const partial = UI_LANGS.find((lang) => lang.label.toLowerCase().includes(lower) || lang.native.toLowerCase().includes(lower));
+ return partial ? partial.code : null;
+ }
+
+ function applySelection() {
+ const code = resolveCode(input.value);
+ if (!code) return;
+ const applied = NutriApp.setUiLanguage(code);
+ const appliedLang = UI_LANGS.find((lang) => lang.code === applied);
+ if (appliedLang) input.value = appliedLang.label;
+ }
+
+ button.addEventListener('click', applySelection);
+ input.addEventListener('keydown', (event) => {
+ if (event.key !== 'Enter') return;
+ event.preventDefault();
+ applySelection();
+ });
+
+ const controls = document.getElementById('auth-controls');
+ if (controls) {
+ nav.insertBefore(widget, controls);
+ } else {
+ nav.appendChild(widget);
+ }
  }
 
  function decorateNavForTranslation() {
@@ -7229,10 +7293,10 @@
  }
 
  function applyGlobalUi() {
- ensureSettingsLink();
  decorateNavForTranslation();
  applyTranslations(document);
  createAuthButtons();
+ createLanguageWidget();
  }
 
  if ('serviceWorker' in navigator) {

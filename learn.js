@@ -1,5 +1,12 @@
 (function () {
   const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
+  const runtimeKeys = window.NUTRIPATH_KEYS || {};
+  const INTEGRATION_KEYS = {
+    voiceApiKey: runtimeKeys.voiceApiKey || 'vk_65dba3ff0c28732dedd5efe0ac0e3296a4c3ae180171c13c30632f6866b37ee3',
+    recipeApiKey: runtimeKeys.recipeApiKey || '9a91ca7a62f2401693f9ba34d7c3eacf',
+  };
+  const VOICE_API_BASE = 'https://dev.voice.ai/api/v1';
+  const SPOONACULAR_API_BASE = 'https://api.spoonacular.com';
 
   function escapeHtml(value) {
     return String(value || '')
@@ -36,15 +43,63 @@
     const playBtn = document.getElementById('voice-play-result');
     const replayBtn = document.getElementById('voice-replay-result');
     const stopBtn = document.getElementById('voice-stop-result');
+    const refreshVoicesBtn = document.getElementById('voice-refresh-voices');
+    const providerSelect = document.getElementById('voice-provider-select');
+    const voiceIdSelect = document.getElementById('voice-id-select');
     const slowMode = document.getElementById('voice-slow-mode');
     const statusNode = document.getElementById('voice-status');
     const summaryNode = document.getElementById('voice-last-summary');
 
     let latestText = '';
     let lastSpokenText = '';
+    const audio = new Audio();
+    let lastAudioUrl = '';
 
     function setStatus(text) {
       if (statusNode) statusNode.textContent = text;
+    }
+
+    function normalizedVoiceLanguage() {
+      const raw = String(window.NutriApp?.getUiLanguage?.() || 'en').slice(0, 2).toLowerCase();
+      const supported = new Set(['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'nl', 'pl', 'sv', 'ca']);
+      return supported.has(raw) ? raw : 'en';
+    }
+
+    async function loadCloudVoices() {
+      if (!voiceIdSelect) return;
+      if (!INTEGRATION_KEYS.voiceApiKey) {
+        voiceIdSelect.innerHTML = '<option value="">Default built-in voice</option>';
+        setStatus('No cloud voice API key configured. Using browser voice.');
+        return;
+      }
+
+      voiceIdSelect.innerHTML = '<option value="">Loading voices...</option>';
+      try {
+        const response = await fetch(`${VOICE_API_BASE}/tts/voices`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${INTEGRATION_KEYS.voiceApiKey}`,
+          },
+        });
+
+        if (!response.ok) throw new Error(`Voice list failed (${response.status})`);
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : Array.isArray(data?.voices) ? data.voices : Array.isArray(data?.data) ? data.data : [];
+        const available = list.filter((item) => item && (!item.status || String(item.status).toUpperCase() === 'AVAILABLE'));
+
+        voiceIdSelect.innerHTML = '<option value="">Default built-in voice</option>';
+        available.forEach((voice) => {
+          const option = document.createElement('option');
+          option.value = String(voice.voice_id || '');
+          option.textContent = voice.name ? `${voice.name}` : `Voice ${voice.voice_id}`;
+          voiceIdSelect.appendChild(option);
+        });
+
+        setStatus(available.length ? `Loaded ${available.length} cloud voice(s).` : 'No custom cloud voices available. Using built-in voice.');
+      } catch {
+        voiceIdSelect.innerHTML = '<option value="">Default built-in voice</option>';
+        setStatus('Could not load cloud voices. Browser fallback remains available.');
+      }
     }
 
     function chooseVoice() {
@@ -60,10 +115,96 @@
       return voices.find((voice) => voice.lang?.toLowerCase().includes('en-us')) || voices.find((voice) => voice.lang?.startsWith('en')) || voices[0];
     }
 
-    function speak(text, replay = false) {
+    function cleanupAudioUrl() {
+      if (lastAudioUrl && lastAudioUrl.startsWith('blob:')) URL.revokeObjectURL(lastAudioUrl);
+      lastAudioUrl = '';
+    }
+
+    function playAudioBlob(blob, replay = false) {
+      cleanupAudioUrl();
+      lastAudioUrl = URL.createObjectURL(blob);
+      audio.src = lastAudioUrl;
+      audio.playbackRate = slowMode?.checked ? 0.9 : 1;
+      audio.currentTime = 0;
+      setStatus(replay ? 'Replaying cloud voice result...' : 'Playing cloud voice result...');
+      return audio.play();
+    }
+
+    async function playAudioUrl(url, replay = false) {
+      cleanupAudioUrl();
+      lastAudioUrl = String(url || '');
+      audio.src = lastAudioUrl;
+      audio.playbackRate = slowMode?.checked ? 0.9 : 1;
+      audio.currentTime = 0;
+      setStatus(replay ? 'Replaying cloud voice result...' : 'Playing cloud voice result...');
+      return audio.play();
+    }
+
+    async function speakWithCloud(message, replay = false) {
+      if (!INTEGRATION_KEYS.voiceApiKey) return false;
+      if (providerSelect && providerSelect.value !== 'cloud') return false;
+      if (replay && audio.src) {
+        audio.currentTime = 0;
+        audio.playbackRate = slowMode?.checked ? 0.9 : 1;
+        await audio.play();
+        setStatus('Replaying last cloud voice result...');
+        return true;
+      }
+
+      const payload = {
+        text: message,
+        language: normalizedVoiceLanguage(),
+        model: 'voiceai-tts-v1-latest',
+        audio_format: 'mp3',
+      };
+      if (voiceIdSelect && voiceIdSelect.value) payload.voice_id = voiceIdSelect.value;
+
+      try {
+        const response = await fetch(`${VOICE_API_BASE}/tts/speech`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${INTEGRATION_KEYS.voiceApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) throw new Error(`Cloud voice failed (${response.status})`);
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        if (contentType.includes('application/json')) {
+          const payload = await response.json();
+          if (payload?.audio_url) {
+            await playAudioUrl(payload.audio_url, replay);
+          } else if (payload?.audio_base64) {
+            const binary = atob(payload.audio_base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let index = 0; index < binary.length; index += 1) {
+              bytes[index] = binary.charCodeAt(index);
+            }
+            await playAudioBlob(new Blob([bytes], { type: 'audio/mpeg' }), replay);
+          } else {
+            throw new Error('Cloud voice returned JSON without playable audio.');
+          }
+        } else {
+          const blob = await response.blob();
+          await playAudioBlob(blob, replay);
+        }
+        return true;
+      } catch {
+        setStatus('Cloud voice unavailable, using browser fallback.');
+        return false;
+      }
+    }
+
+    async function speak(text, replay = false) {
       const message = String(text || '').trim();
       if (!message) {
         setStatus('No result selected yet. Run a tool first.');
+        return;
+      }
+
+      if (await speakWithCloud(message, replay)) {
+        lastSpokenText = message;
         return;
       }
 
@@ -90,13 +231,13 @@
     }
 
     if (playBtn) {
-      playBtn.addEventListener('click', () => {
+      playBtn.addEventListener('click', async () => {
         speak(latestText, false);
       });
     }
 
     if (replayBtn) {
-      replayBtn.addEventListener('click', () => {
+      replayBtn.addEventListener('click', async () => {
         speak(lastSpokenText || latestText, true);
       });
     }
@@ -104,13 +245,39 @@
     if (stopBtn) {
       stopBtn.addEventListener('click', () => {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        audio.pause();
+        audio.currentTime = 0;
         setStatus('Voice stopped.');
       });
     }
 
+    if (refreshVoicesBtn) {
+      refreshVoicesBtn.addEventListener('click', loadCloudVoices);
+    }
+
+    if (providerSelect) {
+      providerSelect.addEventListener('change', () => {
+        if (providerSelect.value === 'cloud') {
+          loadCloudVoices();
+        } else {
+          setStatus('Using browser voice fallback.');
+        }
+      });
+    }
+
+    audio.addEventListener('ended', () => {
+      setStatus('Voice playback complete.');
+    });
+
     window.addEventListener('beforeunload', () => {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      audio.pause();
+      cleanupAudioUrl();
     });
+
+    if (providerSelect && providerSelect.value === 'cloud') {
+      loadCloudVoices();
+    }
 
     return {
       setLatest(text) {
@@ -923,6 +1090,505 @@
     renderSelectedFoods();
   }
 
+  function initRecipeWidget(engine, voice) {
+    const ingredientsInput = document.getElementById('recipe-ingredients-input');
+    if (!ingredientsInput) return;
+
+    const ingredientsBtn = document.getElementById('recipe-ingredients-btn');
+    const ingredientsResult = document.getElementById('recipe-ingredients-result');
+    const nutritionQuery = document.getElementById('recipe-nutrition-query');
+    const minProteinNode = document.getElementById('recipe-min-protein');
+    const maxCaloriesNode = document.getElementById('recipe-max-calories');
+    const nutritionBtn = document.getElementById('recipe-nutrition-btn');
+    const nutritionResult = document.getElementById('recipe-nutrition-result');
+    const extractUrlInput = document.getElementById('recipe-url-input');
+    const extractBtn = document.getElementById('recipe-extract-btn');
+    const extractResult = document.getElementById('recipe-extract-result');
+    const classifyInput = document.getElementById('recipe-classify-input');
+    const classifyBtn = document.getElementById('recipe-classify-btn');
+    const classifyResult = document.getElementById('recipe-classify-result');
+    const mealTimeframeNode = document.getElementById('recipe-meal-timeframe');
+    const mealCaloriesNode = document.getElementById('recipe-meal-calories');
+    const mealBtn = document.getElementById('recipe-meal-btn');
+    const mealResult = document.getElementById('recipe-meal-result');
+    const upcInput = document.getElementById('recipe-upc-input');
+    const upcBtn = document.getElementById('recipe-upc-btn');
+    const upcResult = document.getElementById('recipe-upc-result');
+    const nerInput = document.getElementById('recipe-ner-input');
+    const nerBtn = document.getElementById('recipe-ner-btn');
+    const nerResult = document.getElementById('recipe-ner-result');
+    const triviaBtn = document.getElementById('recipe-trivia-btn');
+    const jokeBtn = document.getElementById('recipe-joke-btn');
+    const funResult = document.getElementById('recipe-fun-result');
+    const chatInput = document.getElementById('recipe-chat-input');
+    const chatBtn = document.getElementById('recipe-chat-btn');
+    const chatResult = document.getElementById('recipe-chat-result');
+
+    function setLoading(node, isLoading, text = 'Loading...') {
+      if (!node) return;
+      node.classList.toggle('is-loading', isLoading);
+      if (isLoading) node.textContent = text;
+    }
+
+    function recipeLink(id, title) {
+      const slug = String(title || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      return `https://spoonacular.com/recipes/${slug || 'recipe'}-${id}`;
+    }
+
+    function nutrientValue(recipe, name) {
+      const list = recipe?.nutrition?.nutrients;
+      if (!Array.isArray(list)) return null;
+      const hit = list.find((item) => String(item?.name || '').toLowerCase() === name.toLowerCase());
+      if (!hit || !Number.isFinite(hit.amount)) return null;
+      return `${hit.amount.toFixed(0)}${hit.unit || ''}`;
+    }
+
+    async function spoonFetch(path, { method = 'GET', params = {}, form = null } = {}) {
+      if (!INTEGRATION_KEYS.recipeApiKey) {
+        throw new Error('Recipe API key is missing.');
+      }
+      const url = new URL(`${SPOONACULAR_API_BASE}${path}`);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return;
+        url.searchParams.set(key, String(value));
+      });
+      url.searchParams.set('apiKey', INTEGRATION_KEYS.recipeApiKey);
+
+      const request = { method };
+      if (method !== 'GET' && form) {
+        request.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        request.body = new URLSearchParams(form).toString();
+      }
+
+      const response = await fetch(url.toString(), request);
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `Spoonacular request failed (${response.status})`);
+      }
+      return response.json();
+    }
+
+    async function fetchShoppingList(recipeIds) {
+      const counts = new Map();
+      for (const id of recipeIds.slice(0, 10)) {
+        try {
+          const info = await spoonFetch(`/recipes/${id}/ingredientWidget.json`);
+          const ingredients = Array.isArray(info?.ingredients) ? info.ingredients : [];
+          ingredients.forEach((item) => {
+            const name = String(item?.name || '').trim();
+            if (!name) return;
+            counts.set(name, (counts.get(name) || 0) + 1);
+          });
+        } catch {
+          continue;
+        }
+      }
+      return [...counts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 20)
+        .map(([name, score]) => `${name} (${score} recipe${score > 1 ? 's' : ''})`);
+    }
+
+    function updateEngine(title, summary, steps, voiceSummary) {
+      engine.update({ title, summary, steps });
+      voice.setLatest(voiceSummary || summary);
+    }
+
+    ingredientsBtn?.addEventListener('click', async () => {
+      const ingredients = String(ingredientsInput.value || '').trim();
+      if (!ingredients) {
+        ingredientsResult.innerHTML = '<p>Add ingredients first.</p>';
+        return;
+      }
+
+      setLoading(ingredientsResult, true, 'Finding recipes...');
+      try {
+        const data = await spoonFetch('/recipes/findByIngredients', {
+          params: {
+            ingredients,
+            number: 6,
+            ranking: 2,
+            ignorePantry: true,
+          },
+        });
+
+        const recipes = Array.isArray(data) ? data : [];
+        if (!recipes.length) {
+          ingredientsResult.innerHTML = '<p>No recipe matches found for those ingredients.</p>';
+          return;
+        }
+
+        ingredientsResult.innerHTML = recipes
+          .map((recipe) => {
+            const missed = (recipe.missedIngredients || []).slice(0, 3).map((item) => item.name).join(', ');
+            return `
+              <div class="recipe-mini-card">
+                <strong>${escapeHtml(recipe.title)}</strong>
+                <div class="small-text">Used: ${recipe.usedIngredientCount || 0} · Missing: ${recipe.missedIngredientCount || 0}</div>
+                <div class="small-text">${missed ? `Missing examples: ${escapeHtml(missed)}` : 'No major missing items.'}</div>
+                <a class="btn btn-secondary btn-small" href="${escapeHtml(recipeLink(recipe.id, recipe.title))}" target="_blank" rel="noreferrer">Open recipe</a>
+              </div>
+            `;
+          })
+          .join('');
+
+        updateEngine(
+          'Recipe Search by Ingredients',
+          'Found recipes based on foods already available at home.',
+          [
+            { title: 'Run Pantry Rescue', desc: 'Compare recipe ideas with NutriPath nutrient gap guidance.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+            { title: 'Generate budget priorities', desc: 'Plan what to buy first to complete better meals.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' },
+          ],
+          'Ingredient recipe search complete. Review top options and missing foods.',
+        );
+      } catch (error) {
+        ingredientsResult.innerHTML = `<p>Could not fetch recipes right now. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        ingredientsResult.classList.remove('is-loading');
+      }
+    });
+
+    nutritionBtn?.addEventListener('click', async () => {
+      setLoading(nutritionResult, true, 'Searching by nutrition...');
+      try {
+        const data = await spoonFetch('/recipes/complexSearch', {
+          params: {
+            query: nutritionQuery?.value || '',
+            number: 6,
+            minProtein: minProteinNode?.value || '',
+            maxCalories: maxCaloriesNode?.value || '',
+            addRecipeInformation: true,
+            addRecipeNutrition: true,
+          },
+        });
+
+        const recipes = Array.isArray(data?.results) ? data.results : [];
+        if (!recipes.length) {
+          nutritionResult.innerHTML = '<p>No matches for those nutrition filters.</p>';
+          return;
+        }
+
+        nutritionResult.innerHTML = recipes
+          .map((recipe) => {
+            const protein = nutrientValue(recipe, 'Protein');
+            const calories = nutrientValue(recipe, 'Calories');
+            const iron = nutrientValue(recipe, 'Iron');
+            return `
+              <div class="recipe-mini-card">
+                <strong>${escapeHtml(recipe.title)}</strong>
+                <div class="small-text">Protein: ${escapeHtml(protein || 'n/a')} · Calories: ${escapeHtml(calories || 'n/a')} · Iron: ${escapeHtml(iron || 'n/a')}</div>
+                <div class="small-text">Ready in ${recipe.readyInMinutes || 'n/a'} min</div>
+                <a class="btn btn-secondary btn-small" href="${escapeHtml(recipe.sourceUrl || recipeLink(recipe.id, recipe.title))}" target="_blank" rel="noreferrer">Open recipe</a>
+              </div>
+            `;
+          })
+          .join('');
+
+        updateEngine(
+          'Nutrition Requirement Recipe Search',
+          'Generated recipe options filtered by nutrition targets.',
+          [
+            { title: 'Use Meal Builder', desc: 'Adapt top recipes to current pantry constraints.', cta: 'Open Meal Builder', href: './meal-builder.html' },
+            { title: 'Check household risk', desc: 'If intake remains low-quality, run quick risk triage.', cta: 'Open Risk Checker', href: './learn.html#tool-risk-checker' },
+          ],
+          'Nutrition-based recipe search complete. Review protein and calorie targets.',
+        );
+      } catch (error) {
+        nutritionResult.innerHTML = `<p>Nutrition search failed. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        nutritionResult.classList.remove('is-loading');
+      }
+    });
+
+    extractBtn?.addEventListener('click', async () => {
+      const url = String(extractUrlInput?.value || '').trim();
+      if (!url) {
+        extractResult.innerHTML = '<p>Add a recipe URL first.</p>';
+        return;
+      }
+      setLoading(extractResult, true, 'Extracting recipe...');
+      try {
+        const recipe = await spoonFetch('/recipes/extract', {
+          params: {
+            url,
+          },
+        });
+
+        const ingredients = (recipe?.extendedIngredients || []).slice(0, 8).map((item) => item.original || item.name).filter(Boolean);
+        extractResult.innerHTML = `
+          <div class="recipe-mini-card">
+            <strong>${escapeHtml(recipe?.title || 'Extracted recipe')}</strong>
+            <div class="small-text">Servings: ${escapeHtml(recipe?.servings || 'n/a')} · Ready: ${escapeHtml(recipe?.readyInMinutes || 'n/a')} min</div>
+            <div class="small-text">${escapeHtml(ingredients.length ? ingredients.join(' | ') : 'No ingredient list provided.')}</div>
+            <a class="btn btn-secondary btn-small" href="${escapeHtml(recipe?.sourceUrl || url)}" target="_blank" rel="noreferrer">Open source</a>
+          </div>
+        `;
+
+        updateEngine(
+          'Recipe Extraction',
+          'Extracted a recipe from external URL and summarized key ingredients.',
+          [
+            { title: 'Run Pantry Rescue', desc: 'Check if extracted recipe fits current ingredients.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+            { title: 'Build shopping priorities', desc: 'Prioritize missing foods by impact and budget.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' },
+          ],
+          'Recipe extraction complete. Compare ingredients with pantry and budget tools.',
+        );
+      } catch (error) {
+        extractResult.innerHTML = `<p>Extraction failed. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        extractResult.classList.remove('is-loading');
+      }
+    });
+
+    classifyBtn?.addEventListener('click', async () => {
+      const title = String(classifyInput?.value || '').trim();
+      if (!title) {
+        classifyResult.innerHTML = '<p>Add a recipe title or description first.</p>';
+        return;
+      }
+      setLoading(classifyResult, true, 'Classifying cuisine...');
+      try {
+        const data = await spoonFetch('/recipes/cuisine', {
+          method: 'POST',
+          form: { title },
+        });
+
+        classifyResult.innerHTML = `
+          <div class="recipe-mini-card">
+            <strong>Cuisine:</strong> ${escapeHtml(data?.cuisine || 'Unknown')}
+            <div class="small-text">Alternatives: ${escapeHtml((data?.cuisines || []).join(', ') || 'n/a')}</div>
+            <div class="small-text">Confidence: ${escapeHtml(typeof data?.confidence === 'number' ? data.confidence.toFixed(2) : 'n/a')}</div>
+          </div>
+        `;
+
+        updateEngine(
+          'Cuisine Classification',
+          'Classified recipe cuisine and confidence for culturally relevant meal planning.',
+          [
+            { title: 'Search similar nutrition-friendly recipes', desc: 'Use nutrition filters to find related options.', cta: 'Nutrition Search', href: '#recipe-widget' },
+            { title: 'Adapt to pantry reality', desc: 'Use Pantry Rescue for household constraints.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+          ],
+          'Cuisine classification complete. Use this to adapt culturally relevant meal choices.',
+        );
+      } catch (error) {
+        classifyResult.innerHTML = `<p>Classification failed. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        classifyResult.classList.remove('is-loading');
+      }
+    });
+
+    mealBtn?.addEventListener('click', async () => {
+      setLoading(mealResult, true, 'Generating meal plan and shopping list...');
+      try {
+        const timeFrame = mealTimeframeNode?.value || 'day';
+        const plan = await spoonFetch('/mealplanner/generate', {
+          params: {
+            timeFrame,
+            targetCalories: mealCaloriesNode?.value || '',
+          },
+        });
+
+        let meals = [];
+        if (timeFrame === 'day') {
+          meals = Array.isArray(plan?.meals) ? plan.meals : [];
+        } else {
+          const week = plan?.week || {};
+          const days = Object.values(week);
+          days.forEach((day) => {
+            if (Array.isArray(day?.meals)) meals.push(...day.meals);
+          });
+        }
+
+        const uniqueMeals = meals.slice(0, timeFrame === 'day' ? 6 : 12);
+        const shopping = await fetchShoppingList(uniqueMeals.map((meal) => meal.id));
+
+        mealResult.innerHTML = `
+          <div class="recipe-mini-card">
+            <strong>Generated ${escapeHtml(timeFrame)} plan</strong>
+            <ul class="recipe-list">
+              ${uniqueMeals
+                .map((meal) => `<li><a href="${escapeHtml(meal.sourceUrl || recipeLink(meal.id, meal.title))}" target="_blank" rel="noreferrer">${escapeHtml(meal.title)}</a></li>`)
+                .join('')}
+            </ul>
+          </div>
+          <div class="recipe-mini-card">
+            <strong>Shopping list (aggregated)</strong>
+            <ul class="recipe-list">
+              ${shopping.length ? shopping.map((item) => `<li>${escapeHtml(item)}</li>`).join('') : '<li>No shopping list generated.</li>'}
+            </ul>
+          </div>
+        `;
+
+        updateEngine(
+          'Meal Plan + Shopping List',
+          `Generated a ${timeFrame} meal plan with shopping priorities.`,
+          [
+            { title: 'Cross-check pantry constraints', desc: 'Use Pantry Rescue if some plan meals are unrealistic.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+            { title: 'Budget tune-up', desc: 'Use Budget Planner to prioritize must-buy foods first.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' },
+          ],
+          `Meal plan generation complete for ${timeFrame} timeframe. Shopping list created from recipe ingredients.`,
+        );
+      } catch (error) {
+        mealResult.innerHTML = `<p>Meal plan generation failed. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        mealResult.classList.remove('is-loading');
+      }
+    });
+
+    upcBtn?.addEventListener('click', async () => {
+      const upc = String(upcInput?.value || '').trim();
+      if (!upc) {
+        upcResult.innerHTML = '<p>Add a UPC code first.</p>';
+        return;
+      }
+      setLoading(upcResult, true, 'Looking up product...');
+      try {
+        const data = await spoonFetch(`/food/products/upc/${encodeURIComponent(upc)}`);
+        upcResult.innerHTML = `
+          <div class="recipe-mini-card">
+            <strong>${escapeHtml(data?.title || 'Product found')}</strong>
+            <div class="small-text">Category: ${escapeHtml(data?.category || 'n/a')}</div>
+            <div class="small-text">Brand: ${escapeHtml(data?.brand || data?.brands || 'n/a')}</div>
+            <div class="small-text">Badges: ${escapeHtml((data?.badges || []).slice(0, 8).join(', ') || 'n/a')}</div>
+          </div>
+        `;
+
+        updateEngine(
+          'UPC Product Lookup',
+          'Looked up grocery product details for decision support.',
+          [
+            { title: 'Check nutrition quality', desc: 'If product is highly processed, run Pantry Rescue for balancing guidance.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+          ],
+          'UPC lookup complete. Review product category and badges before purchase.',
+        );
+      } catch (error) {
+        upcResult.innerHTML = `<p>UPC lookup failed. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        upcResult.classList.remove('is-loading');
+      }
+    });
+
+    nerBtn?.addEventListener('click', async () => {
+      const text = String(nerInput?.value || '').trim();
+      if (!text) {
+        nerResult.innerHTML = '<p>Enter food-related text first.</p>';
+        return;
+      }
+      setLoading(nerResult, true, 'Detecting food entities...');
+      try {
+        const data = await spoonFetch('/food/detect', {
+          method: 'POST',
+          form: { text },
+        });
+
+        const annotations = Array.isArray(data?.annotations) ? data.annotations : [];
+        nerResult.innerHTML = `
+          <div class="recipe-mini-card">
+            <strong>Detected items</strong>
+            <ul class="recipe-list">
+              ${annotations.length
+                ? annotations.map((item) => `<li>${escapeHtml(item.annotation)} (${escapeHtml(item.tag || 'item')})</li>`).join('')
+                : '<li>No food entities detected.</li>'}
+            </ul>
+          </div>
+        `;
+
+        updateEngine(
+          'Food Entity Detection',
+          'Detected food-related entities from free text for faster meal logging.',
+          [
+            { title: 'Send detected foods to ingredient search', desc: 'Run fridge search with detected items.', cta: 'Use ingredient search', href: '#recipe-widget' },
+          ],
+          'Food detection complete. Review detected ingredients and dishes.',
+        );
+      } catch (error) {
+        nerResult.innerHTML = `<p>Food detection failed. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        nerResult.classList.remove('is-loading');
+      }
+    });
+
+    triviaBtn?.addEventListener('click', async () => {
+      setLoading(funResult, true, 'Fetching food trivia...');
+      try {
+        const data = await spoonFetch('/food/trivia/random');
+        funResult.innerHTML = `<p>${escapeHtml(data?.text || 'No trivia available right now.')}</p>`;
+      } catch (error) {
+        funResult.innerHTML = `<p>Could not load trivia. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        funResult.classList.remove('is-loading');
+      }
+    });
+
+    jokeBtn?.addEventListener('click', async () => {
+      setLoading(funResult, true, 'Fetching food joke...');
+      try {
+        const data = await spoonFetch('/food/jokes/random');
+        funResult.innerHTML = `<p>${escapeHtml(data?.text || 'No joke available right now.')}</p>`;
+      } catch (error) {
+        funResult.innerHTML = `<p>Could not load joke. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        funResult.classList.remove('is-loading');
+      }
+    });
+
+    chatBtn?.addEventListener('click', async () => {
+      const question = String(chatInput?.value || '').trim();
+      if (!question) {
+        chatResult.innerHTML = '<p>Ask a recipe question first.</p>';
+        return;
+      }
+
+      setLoading(chatResult, true, 'Thinking...');
+      const normalized = normalizeText(question);
+      try {
+        if (normalized.includes('upc') || normalized.includes('barcode')) {
+          chatResult.innerHTML = '<p>Use the UPC tool above to check grocery products quickly.</p>';
+        } else if (normalized.includes('budget') || normalized.includes('cheap') || normalized.includes('afford')) {
+          chatResult.innerHTML = '<p>Use Budget Planner in Action Hub to rank low-cost nutrition foods first, then run ingredient search for recipes.</p>';
+        } else if (normalized.includes('fridge') || normalized.includes('have') || normalized.includes('ingredients')) {
+          ingredientsInput.value = question.replace(/.*with/i, '').trim() || ingredientsInput.value;
+          chatResult.innerHTML = '<p>I moved your request toward ingredient search. Click "Find recipes" in the first recipe tool.</p>';
+        } else {
+          const data = await spoonFetch('/recipes/complexSearch', {
+            params: {
+              query: question,
+              number: 3,
+            },
+          });
+          const hits = Array.isArray(data?.results) ? data.results : [];
+          chatResult.innerHTML = `
+            <div class="recipe-mini-card">
+              <strong>Helper suggestions</strong>
+              <ul class="recipe-list">
+                ${hits.length
+                  ? hits.map((item) => `<li><a href="${escapeHtml(recipeLink(item.id, item.title))}" target="_blank" rel="noreferrer">${escapeHtml(item.title)}</a></li>`).join('')
+                  : '<li>No direct recipe matches found. Try simpler ingredients or cuisine terms.</li>'}
+              </ul>
+            </div>
+          `;
+        }
+
+        updateEngine(
+          'Recipe Chatbot Helper',
+          'Provided recipe direction based on user question and available API tools.',
+          [
+            { title: 'Run ingredient search', desc: 'Find practical recipes with currently available foods.', cta: 'Ingredient search', href: '#recipe-widget' },
+            { title: 'Run Pantry Rescue', desc: 'Check if recipes fit nutrition-risk constraints.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+          ],
+          'Recipe helper responded. Review suggested next actions and related tools.',
+        );
+      } catch (error) {
+        chatResult.innerHTML = `<p>Recipe helper failed. ${escapeHtml(error.message)}</p>`;
+      } finally {
+        chatResult.classList.remove('is-loading');
+      }
+    });
+  }
+
   const voice = buildVoiceSupport();
   const engine = buildNextStepEngine();
 
@@ -931,4 +1597,5 @@
   initPantryRescue(engine, voice);
   initEscalationTool(engine, voice);
   initClaimChecker(engine, voice);
+  initRecipeWidget(engine, voice);
 })();

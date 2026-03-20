@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nutripath-v23';
+const CACHE_NAME = 'nutripath-v24';
 const APP_SHELL = [
   './',
   './index.html',
