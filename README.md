@@ -8,7 +8,7 @@ A multi-page, mobile-first web app prototype for malnutrition screening and inte
 - `assessment.html` - risk intake form
 - `results.html` - risk score, deficiencies, meal plan, and referral actions
 - `map.html` - resource locator map with filters (Leaflet + OpenStreetMap)
-- `dashboard.html` - NGO analytics dashboard with charts
+- `meal-builder.html` - Smart Meal Builder for what users already have
 - `learn.html` - micro-learning and voice assist cards
 
 ## Run locally

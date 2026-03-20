@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+ <head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <meta name="theme-color" content="#0b3c5d" />
+ <title>NutriPath | Smart Meal Builder</title>
+ <link rel="stylesheet" href="./styles.css" />
+ </head>
+ <body data-page="meal" data-title-key="title_meal">
+ <header class="topbar">
+ <div class="container nav">
+ <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>NutriPath</span></a>
+ <nav class="nav-links" aria-label="Primary navigation">
+ <a class="nav-link" data-nav="home" href="./index.html">Home</a>
+ <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
+ <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
+ <a class="nav-link" data-nav="meal" href="./meal-builder.html">Meal Builder</a>
+ <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
+ </nav>
+ </div>
+ </header>
+
+ <main class="container">
+ <section class="page-header">
+ <h1 class="page-title">Smart Meal Builder for What You Have</h1>
+ <p class="page-desc">
+ Enter foods your household has right now. NutriPath returns the best meal idea you can make today,
+ likely nutrient gaps, low-cost foods to add next, and realistic pantry-friendly swaps.
+ </p>
+ </section>
+
+ <section class="section">
+ <article class="card">
+ <h3>Build from real constraints</h3>
+ <p class="small-text">
+ This tool is designed for food insecurity realities: low budget, limited transport, corner-store access,
+ and inconsistent fresh produce. Canned and frozen foods are supported.
+ </p>
+
+ <div class="form-grid">
+ <div class="field">
+ <label for="hub-food-input">Add a food you have now</label>
+ <input id="hub-food-input" list="hub-food-options" placeholder="Example: canned tuna, rice, peanut butter" />
+ <datalist id="hub-food-options"></datalist>
+ </div>
+ <div class="field" style="align-content: end;">
+ <div class="cta-row">
+ <button id="hub-add-food" class="btn btn-secondary" type="button">Add Food</button>
+ <button id="hub-clear-foods" class="btn btn-secondary" type="button">Clear</button>
+ <button id="hub-analyze-foods" class="btn btn-primary" type="button">Build Meal Plan</button>
+ </div>
+ </div>
+ </div>
+
+ <div id="hub-selected-foods" class="selected-foods" aria-live="polite"></div>
+ <p id="hub-food-status" class="small-text" style="margin: 0.55rem 0 0;"></p>
+
+ <div id="hub-food-results" class="grid-3 section hide meal-builder-results" style="padding-top: 0.9rem;">
+ <article class="card">
+ <h4>Best meal idea now</h4>
+ <ul id="hub-meal-list"></ul>
+ </article>
+ <article class="card">
+ <h4>Good nutrients you already have</h4>
+ <ul id="hub-nutrient-list"></ul>
+ </article>
+ <article class="card">
+ <h4>Likely nutrient gaps</h4>
+ <ul id="hub-gap-list"></ul>
+ </article>
+ <article class="card">
+ <h4>Cheapest helpful foods to add</h4>
+ <ul id="hub-addon-list"></ul>
+ </article>
+ <article class="card">
+ <h4>Easy swaps if missing ingredients</h4>
+ <ul id="hub-swap-list"></ul>
+ </article>
+ <article class="card">
+ <h4>What to do next</h4>
+ <div id="hub-next-steps" class="small-text"></div>
+ </article>
+ </div>
+ </article>
+ </section>
+
+ <section class="section grid-2">
+ <article class="card">
+ <h3>Need fast guidance?</h3>
+ <p class="small-text">Use short, practical lessons for children, seniors, low-access households, and warning signs.</p>
+ <div class="cta-row">
+ <a class="btn btn-secondary" href="./learn.html#quick-guides">Open Learning Hub</a>
+ <a class="btn btn-secondary" href="./learn.html#claim-checker">Check a nutrition claim</a>
+ </div>
+ </article>
+ <article class="card">
+ <h3>Need nearby support?</h3>
+ <p class="small-text">If you are out of options, use the Resource Map to find verified help nearby or closest verified support.</p>
+ <div class="cta-row">
+ <a class="btn btn-primary" href="./map.html">Find resources</a>
+ </div>
+ </article>
+ </section>
+ </main>
+
+ <footer class="container footer"><span data-i18n="footer_prefix">NutriPath for Fuel the Future Hackathon</span> · <span id="year"></span></footer>
+
+ <script src="./data.js"></script>
+ <script src="./app.js"></script>
+ <script src="./learn.js"></script>
+ </body>
+</html>

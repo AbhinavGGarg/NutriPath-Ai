@@ -1,31 +1,61 @@
 (function () {
-  if (!window.L) return;
+  if (!window.L || !window.NutriData || !window.NutriApp) return;
 
   const communityInput = document.getElementById('map-community');
   const communityList = document.getElementById('map-community-options');
+  const communitySuggestionsNode = document.getElementById('map-community-suggestions');
+  const communityFeedbackNode = document.getElementById('map-community-feedback');
   const typeSelect = document.getElementById('resource-type');
   const distanceRange = document.getElementById('max-distance');
   const distanceLabel = document.getElementById('distance-label');
   const statusNode = document.getElementById('map-status');
+  const statsNode = document.getElementById('map-stats');
   const resourceList = document.getElementById('resource-list');
+  const resourceListTitle = document.getElementById('resource-list-title');
+  const resourceListSubtitle = document.getElementById('resource-list-subtitle');
   const applyButton = document.getElementById('apply-map-filter');
   const locateButton = document.getElementById('locate-btn');
+  const locationConfirmNode = document.getElementById('location-confirm');
+  const emptyStateNode = document.getElementById('map-empty-state');
+  const emptyStateTitleNode = document.getElementById('map-empty-title');
+  const emptyStateCopyNode = document.getElementById('map-empty-copy');
+  const increaseDistanceButton = document.getElementById('btn-increase-distance');
+  const showClosestButton = document.getElementById('btn-show-closest');
+  const resetMapButton = document.getElementById('btn-reset-map');
+  const loadingNode = document.getElementById('map-loading');
+  const loadingTextNode = document.getElementById('map-loading-text');
 
-  const communityNames = Object.keys(NutriData.communities);
-  const communityLabels = communityNames
-    .map((name) => `${name}, ${NutriData.communities[name].country}`)
-    .sort((a, b) => a.localeCompare(b));
+  const DEFAULT_VIEW = { lat: 18, lng: 10, zoom: 2 };
+  const DEFAULT_DISTANCE_KM = 20;
+  const CLOSEST_LIMIT = 20;
+  const MAX_CONTEXT_MARKERS = 320;
 
-  communityLabels.forEach((label) => {
+  const communityEntries = Object.entries(NutriData.communities)
+    .map(([name, point]) => {
+      const country = String(point?.country || '').trim();
+      const label = `${name}, ${country}`;
+      return {
+        key: name,
+        name,
+        country,
+        label,
+        point,
+        normalizedName: normalizeText(name),
+        normalizedLabel: normalizeText(label),
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  communityEntries.forEach((entry) => {
     const option = document.createElement('option');
-    option.value = label;
+    option.value = entry.label;
     communityList.appendChild(option);
   });
 
-  const map = L.map('resource-map').setView([18, 10], 2);
+  const map = L.map('resource-map').setView([DEFAULT_VIEW.lat, DEFAULT_VIEW.lng], DEFAULT_VIEW.zoom);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   }).addTo(map);
   map.attributionControl.setPrefix('');
 
@@ -33,7 +63,25 @@
   const labelPane = map.getPane('globalLabelPane');
   if (labelPane) labelPane.style.zIndex = '360';
 
-  const markerLayer = L.layerGroup().addTo(map);
+  const contextLayer = L.layerGroup().addTo(map);
+  const supportsClustering = typeof L.markerClusterGroup === 'function';
+  const markerLayer = supportsClustering
+    ? L.markerClusterGroup({
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: true,
+        maxClusterRadius: 40,
+        iconCreateFunction(cluster) {
+          return L.divIcon({
+            className: 'map-cluster',
+            html: `<span class="map-cluster-badge">${cluster.getChildCount()}</span>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 17],
+          });
+        },
+      })
+    : L.layerGroup();
+  markerLayer.addTo(map);
+
   const hotspotLayer = L.layerGroup().addTo(map);
   const continentLabelLayer = L.layerGroup().addTo(map);
   const countryLabelLayer = L.layerGroup().addTo(map);
@@ -45,15 +93,11 @@
   let countryCentroids = [];
   let countryDataLoaded = false;
   let filterRunId = 0;
-  const geocodeCache = new Map();
-  const liveResourceCache = new Map();
-  const nearestFallbackLimit = 120;
+  let activeMode = 'global';
 
-  const markerStyleByType = {
-    Clinic: { color: '#e63946', fillColor: '#ff6b74' },
-    'Food Support': { color: '#f4b942', fillColor: '#ffd27a' },
-    NGO: { color: '#0b3c5d', fillColor: '#4f8ab0' }
-  };
+  const geocodeCache = new Map();
+  const reverseGeocodeCache = new Map();
+  const liveResourceCache = new Map();
 
   const continentPoints = [
     { code: '019', fallback: 'Americas', lat: 15, lng: -85 },
@@ -61,7 +105,7 @@
     { code: '002', fallback: 'Africa', lat: 2, lng: 20 },
     { code: '142', fallback: 'Asia', lat: 35, lng: 90 },
     { code: '009', fallback: 'Oceania', lat: -20, lng: 140 },
-    { code: '010', fallback: 'Antarctica', lat: -78, lng: 0 }
+    { code: '010', fallback: 'Antarctica', lat: -78, lng: 0 },
   ];
 
   function t(key, vars) {
@@ -70,10 +114,6 @@
 
   function resourceTypeLabel(type) {
     return window.NutriApp?.getResourceTypeLabel ? window.NutriApp.getResourceTypeLabel(type) : type;
-  }
-
-  function updateDistanceLabel() {
-    distanceLabel.textContent = t('map_distance_value', { distance: distanceRange.value });
   }
 
   function normalizeText(value) {
@@ -106,6 +146,100 @@
     }
   }
 
+  function setLoading(isLoading, messageKey = 'map_loading_filters') {
+    if (applyButton) applyButton.disabled = isLoading;
+    if (locateButton) locateButton.disabled = isLoading;
+    resourceList.classList.toggle('is-loading', isLoading);
+    if (!loadingNode || !loadingTextNode) return;
+    loadingTextNode.textContent = t(messageKey);
+    loadingNode.classList.toggle('hide', !isLoading);
+  }
+
+  function setStatus(text, tone = 'info') {
+    statusNode.classList.remove('map-status-info', 'map-status-ok', 'map-status-warn');
+    statusNode.classList.add(tone === 'ok' ? 'map-status-ok' : tone === 'warn' ? 'map-status-warn' : 'map-status-info');
+    statusNode.textContent = text || '';
+  }
+
+  function setCommunityFeedback(text) {
+    if (!communityFeedbackNode) return;
+    const message = String(text || '').trim();
+    communityFeedbackNode.textContent = message;
+    communityFeedbackNode.classList.toggle('hide', !message);
+  }
+
+  function showLocationConfirm(text) {
+    if (!locationConfirmNode) return;
+    locationConfirmNode.textContent = text;
+    locationConfirmNode.classList.toggle('hide', !String(text || '').trim());
+  }
+
+  function hideEmptyState() {
+    if (!emptyStateNode) return;
+    emptyStateNode.classList.add('hide');
+  }
+
+  function showEmptyState(maxDistance) {
+    if (!emptyStateNode || !emptyStateTitleNode || !emptyStateCopyNode) return;
+    emptyStateTitleNode.textContent = t('map_empty_title', { distance: maxDistance });
+    emptyStateCopyNode.textContent = t('map_empty_copy', { distance: maxDistance });
+    emptyStateNode.classList.remove('hide');
+  }
+
+  function applyStaticMapTexts() {
+    if (increaseDistanceButton) increaseDistanceButton.textContent = t('map_btn_increase_distance');
+    if (showClosestButton) showClosestButton.textContent = t('map_btn_show_closest');
+    if (resetMapButton) resetMapButton.textContent = t('map_btn_reset_filters');
+    if (loadingTextNode) loadingTextNode.textContent = t('map_loading_filters');
+  }
+
+  function updateDistanceLabel() {
+    distanceLabel.textContent = t('map_distance_value', { distance: distanceRange.value });
+  }
+
+  function formatDistanceValue(distance) {
+    if (!Number.isFinite(distance)) return null;
+    if (distance >= 300) return `${Math.round(distance / 10) * 10}+ km`;
+    if (distance >= 20) return `~${Math.round(distance)} km`;
+    return `${distance.toFixed(1)} km`;
+  }
+
+  function formatDistanceAway(distance) {
+    if (!Number.isFinite(distance)) return t('map_distance_pending');
+    if (distance >= 300) return t('map_distance_away_plus', { distance: Math.round(distance / 10) * 10 });
+    if (distance >= 20) return t('map_distance_away_approx', { distance: Math.round(distance) });
+    return t('map_distance_away_precise', { distance: distance.toFixed(1) });
+  }
+
+  function resourceKey(resource) {
+    return `${resource.type}|${resource.name}|${Number(resource.lat).toFixed(4)}|${Number(resource.lng).toFixed(4)}`;
+  }
+
+  function markerTypeClass(type) {
+    return String(type || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-');
+  }
+
+  function resultMarkerIcon(type) {
+    const typeClass = markerTypeClass(type);
+    return L.divIcon({
+      className: 'map-resource-icon',
+      html: `<span class="map-resource-pin map-resource-pin-${typeClass}"></span>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+  }
+
+  function mutedMarkerIcon() {
+    return L.divIcon({
+      className: 'map-resource-icon-muted',
+      html: '<span class="map-resource-pin-muted"></span>',
+      iconSize: [10, 10],
+      iconAnchor: [5, 5],
+    });
+  }
+
   function createLabelMarker(lat, lng, text, type) {
     return L.marker([lat, lng], {
       pane: 'globalLabelPane',
@@ -113,8 +247,8 @@
       keyboard: false,
       icon: L.divIcon({
         className: `map-label map-label-${type}`,
-        html: `<span>${escapeHtml(text)}</span>`
-      })
+        html: `<span>${escapeHtml(text)}</span>`,
+      }),
     });
   }
 
@@ -135,7 +269,7 @@
             iso: String(iso).toUpperCase(),
             country: feature?.properties?.COUNTRY || iso,
             lat: Number(coords[1]),
-            lng: Number(coords[0])
+            lng: Number(coords[0]),
           };
         })
         .filter(Boolean);
@@ -159,85 +293,9 @@
       createLabelMarker(country.lat, country.lng, localizedCountry, 'country').addTo(countryLabelLayer);
     });
 
-    Object.entries(NutriData.communities).forEach(([city, point]) => {
-      createLabelMarker(point.lat, point.lng, city, 'city').addTo(cityLabelLayer);
+    communityEntries.forEach((entry) => {
+      createLabelMarker(entry.point.lat, entry.point.lng, entry.name, 'city').addTo(cityLabelLayer);
     });
-  }
-
-  function resolveCommunityInput(value) {
-    const raw = String(value || '').trim();
-    if (!raw) return null;
-
-    const withoutCountry = raw.split(',')[0].trim();
-    const exact = communityNames.find((name) => name.toLowerCase() === raw.toLowerCase() || name.toLowerCase() === withoutCountry.toLowerCase());
-    if (exact) {
-      return {
-        key: exact,
-        label: `${exact}, ${NutriData.communities[exact].country}`,
-        point: NutriData.communities[exact]
-      };
-    }
-
-    const normalizedInput = normalizeText(raw);
-    const scored = communityNames
-      .map((name) => {
-        const country = NutriData.communities[name].country;
-        const searchable = normalizeText(`${name} ${country}`);
-        let score = 0;
-        if (searchable.startsWith(normalizedInput)) score += 6;
-        if (searchable.includes(normalizedInput)) score += 3;
-        return { name, score };
-      })
-      .sort((a, b) => b.score - a.score);
-
-    if (scored.length && scored[0].score > 0) {
-      const best = scored[0].name;
-      return {
-        key: best,
-        label: `${best}, ${NutriData.communities[best].country}`,
-        point: NutriData.communities[best]
-      };
-    }
-
-    return null;
-  }
-
-  async function geocodeCommunityInput(value) {
-    const raw = String(value || '').trim();
-    const cacheKey = normalizeText(raw);
-    if (!cacheKey) return null;
-    if (geocodeCache.has(cacheKey)) return geocodeCache.get(cacheKey);
-
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=${encodeURIComponent(currentLanguage())}&q=${encodeURIComponent(raw)}`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        geocodeCache.set(cacheKey, null);
-        return null;
-      }
-      const data = await response.json();
-      if (!Array.isArray(data) || !data.length) {
-        geocodeCache.set(cacheKey, null);
-        return null;
-      }
-
-      const top = data[0];
-      const resolved = {
-        lat: Number(top.lat),
-        lng: Number(top.lon),
-        label: raw
-      };
-      if (!Number.isFinite(resolved.lat) || !Number.isFinite(resolved.lng)) {
-        geocodeCache.set(cacheKey, null);
-        return null;
-      }
-
-      geocodeCache.set(cacheKey, resolved);
-      return resolved;
-    } catch {
-      geocodeCache.set(cacheKey, null);
-      return null;
-    }
   }
 
   function renderHotspots() {
@@ -264,15 +322,175 @@
         color: '#e63946',
         fillColor: '#e63946',
         fillOpacity: 0.22,
-        radius: 250 + stats.count * 120
+        radius: 250 + stats.count * 120,
       })
         .bindPopup(`${stats.label}<br/>${t('map_hotspot_cases', { count: stats.count })}`)
         .addTo(hotspotLayer);
     });
   }
 
-  function renderStatus(text) {
-    statusNode.textContent = text;
+  function scoreCommunity(entry, normalizedQuery) {
+    if (!normalizedQuery) return 0;
+    if (entry.normalizedName === normalizedQuery || entry.normalizedLabel === normalizedQuery) return 100;
+    if (entry.normalizedName.startsWith(normalizedQuery) || entry.normalizedLabel.startsWith(normalizedQuery)) return 70;
+    if (entry.normalizedLabel.includes(normalizedQuery)) return 45;
+    return 0;
+  }
+
+  function getCommunitySuggestions(value, limit = 8) {
+    const normalizedQuery = normalizeText(value);
+    if (!normalizedQuery) return communityEntries.slice(0, limit);
+
+    return communityEntries
+      .map((entry) => ({ entry, score: scoreCommunity(entry, normalizedQuery) }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || a.entry.label.localeCompare(b.entry.label))
+      .slice(0, limit)
+      .map((item) => item.entry);
+  }
+
+  function hideCommunitySuggestions() {
+    if (!communitySuggestionsNode) return;
+    communitySuggestionsNode.innerHTML = '';
+    communitySuggestionsNode.classList.add('hide');
+  }
+
+  function renderCommunitySuggestions(value) {
+    if (!communitySuggestionsNode) return;
+
+    const query = String(value || '').trim();
+    if (!query) {
+      hideCommunitySuggestions();
+      setCommunityFeedback('');
+      return;
+    }
+
+    const suggestions = getCommunitySuggestions(query);
+    if (!suggestions.length) {
+      hideCommunitySuggestions();
+      setCommunityFeedback(t('map_feedback_no_supported'));
+      return;
+    }
+
+    setCommunityFeedback('');
+    communitySuggestionsNode.innerHTML = '';
+    suggestions.forEach((entry) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'map-suggestion';
+      button.textContent = entry.label;
+      button.addEventListener('click', () => {
+        communityInput.value = entry.label;
+        hideCommunitySuggestions();
+        setCommunityFeedback('');
+      });
+      communitySuggestionsNode.appendChild(button);
+    });
+    communitySuggestionsNode.classList.remove('hide');
+  }
+
+  function resolveCommunityInput(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+
+    const normalized = normalizeText(raw);
+    const withoutCountry = normalizeText(raw.split(',')[0] || raw);
+
+    const exact = communityEntries.find((entry) => entry.normalizedLabel === normalized || entry.normalizedName === withoutCountry);
+    if (exact) {
+      return {
+        key: exact.key,
+        label: exact.label,
+        point: exact.point,
+      };
+    }
+
+    const best = getCommunitySuggestions(raw, 1)[0];
+    if (best) {
+      return {
+        key: best.key,
+        label: best.label,
+        point: best.point,
+      };
+    }
+
+    return null;
+  }
+
+  async function timedFetch(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function geocodeCommunityInput(value) {
+    const raw = String(value || '').trim();
+    const cacheKey = normalizeText(raw);
+    if (!cacheKey) return null;
+    if (geocodeCache.has(cacheKey)) return geocodeCache.get(cacheKey);
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=${encodeURIComponent(currentLanguage())}&q=${encodeURIComponent(raw)}`;
+      const response = await timedFetch(url, {}, 6000);
+      if (!response.ok) {
+        geocodeCache.set(cacheKey, null);
+        return null;
+      }
+
+      const data = await response.json();
+      if (!Array.isArray(data) || !data.length) {
+        geocodeCache.set(cacheKey, null);
+        return null;
+      }
+
+      const top = data[0];
+      const resolved = {
+        lat: Number(top.lat),
+        lng: Number(top.lon),
+        label: raw,
+      };
+      if (!Number.isFinite(resolved.lat) || !Number.isFinite(resolved.lng)) {
+        geocodeCache.set(cacheKey, null);
+        return null;
+      }
+
+      geocodeCache.set(cacheKey, resolved);
+      return resolved;
+    } catch {
+      geocodeCache.set(cacheKey, null);
+      return null;
+    }
+  }
+
+  async function reverseGeocode(lat, lng) {
+    const key = `${Number(lat).toFixed(3)}|${Number(lng).toFixed(3)}|${currentLanguage()}`;
+    if (reverseGeocodeCache.has(key)) return reverseGeocodeCache.get(key);
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=${encodeURIComponent(currentLanguage())}&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`;
+      const response = await timedFetch(url, {}, 6000);
+      if (!response.ok) {
+        reverseGeocodeCache.set(key, null);
+        return null;
+      }
+
+      const data = await response.json();
+      const address = data?.address || {};
+      const city = address.city || address.town || address.village || address.hamlet || address.county || '';
+      const region = address.state || address.region || address.country || '';
+      const place = [city, region].filter(Boolean).join(', ').trim();
+
+      const resolved = place || String(data?.display_name || '').split(',').slice(0, 2).join(', ').trim() || null;
+      reverseGeocodeCache.set(key, resolved);
+      return resolved;
+    } catch {
+      reverseGeocodeCache.set(key, null);
+      return null;
+    }
   }
 
   function toFixedCoord(value) {
@@ -324,21 +542,11 @@
     return null;
   }
 
-  async function timedFetch(url, options, timeoutMs) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      return await fetch(url, { ...options, signal: controller.signal });
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
   async function fetchLiveNearbyResources(center, maxDistanceKm, type) {
     if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lng)) return [];
 
-    const radiusKm = Math.max(maxDistanceKm, 15);
-    const radiusM = Math.min(120000, Math.round(radiusKm * 1000));
+    const searchRadiusKm = Math.min(250, Math.max(60, Math.round(maxDistanceKm * 4)));
+    const radiusM = Math.round(searchRadiusKm * 1000);
     const cacheKey = `${toFixedCoord(center.lat)}|${toFixedCoord(center.lng)}|${radiusM}|${type}`;
     if (liveResourceCache.has(cacheKey)) return liveResourceCache.get(cacheKey);
 
@@ -356,28 +564,31 @@
           : [clinicClause, foodClause, ngoClause, socialClause];
 
     const query = `
-[out:json][timeout:20];
+[out:json][timeout:22];
 (
 ${clauses.join('\n')}
 );
-out tags center 200;
+out tags center 250;
 `;
 
     try {
       const endpoints = [
         'https://overpass-api.de/api/interpreter',
-        'https://overpass.kumi.systems/api/interpreter'
+        'https://overpass.kumi.systems/api/interpreter',
       ];
 
       let payload = null;
       for (const endpoint of endpoints) {
         try {
-          const response = await timedFetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-            body: `data=${encodeURIComponent(query)}`
-          }, 5000);
-
+          const response = await timedFetch(
+            endpoint,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+              body: `data=${encodeURIComponent(query)}`,
+            },
+            7000,
+          );
           if (!response.ok) continue;
           payload = await response.json();
           break;
@@ -417,12 +628,12 @@ out tags center 200;
             services: liveServicesForType(inferredType, tags),
             open: String(tags.opening_hours || '').trim() || 'Hours not listed',
             distance: NutriApp.haversineKm(center.lat, center.lng, point.lat, point.lng),
-            source: 'live'
+            source: 'live',
           };
         })
         .filter(Boolean)
         .sort((a, b) => a.distance - b.distance)
-        .slice(0, 200);
+        .slice(0, 220);
 
       liveResourceCache.set(cacheKey, liveResources);
       return liveResources;
@@ -438,99 +649,239 @@ out tags center 200;
       radius: 8,
       color: '#0b3c5d',
       fillColor: '#17a398',
-      fillOpacity: 0.9
+      fillOpacity: 0.92,
+      weight: 2,
     })
-      .addTo(markerLayer)
+      .addTo(contextLayer)
       .bindPopup(centerLabel || t('map_selected_center'));
   }
 
-  function buildSummaryByType(list) {
-    const counts = { Clinic: 0, 'Food Support': 0, NGO: 0 };
-    list.forEach((item) => {
-      if (counts[item.type] !== undefined) counts[item.type] += 1;
-    });
-
-    return t('map_summary', {
-      clinic: counts.Clinic,
-      food: counts['Food Support'],
-      ngo: counts.NGO
-    });
-  }
-
   function buildCombinedResources(type, liveNearby) {
-    const typeFiltered = NutriData.resources
+    const base = NutriData.resources
+      .filter((resource) => (type === 'All' ? true : resource.type === type))
       .map((resource) => {
         const distance = mapCenter
           ? NutriApp.haversineKm(mapCenter.lat, mapCenter.lng, resource.lat, resource.lng)
           : null;
-        return { ...resource, distance };
-      })
-      .filter((resource) => (type === 'All' ? true : resource.type === type));
+        return { ...resource, distance, source: 'dataset' };
+      });
 
-    const combinedById = new Map();
-    [...(liveNearby || []), ...typeFiltered].forEach((resource) => {
-      const key = `${resource.type}|${toFixedCoord(resource.lat)}|${toFixedCoord(resource.lng)}|${resource.name}`;
-      if (!combinedById.has(key)) combinedById.set(key, resource);
+    const combinedByKey = new Map();
+    [...(liveNearby || []), ...base].forEach((resource) => {
+      const key = resourceKey(resource);
+      if (!combinedByKey.has(key)) combinedByKey.set(key, resource);
     });
 
-    return [...combinedById.values()].sort((a, b) => {
+    const combined = [...combinedByKey.values()];
+    combined.sort((a, b) => {
       if (mapCenter) return (a.distance ?? Infinity) - (b.distance ?? Infinity);
       return a.name.localeCompare(b.name);
     });
+    return combined;
   }
 
-  function pickFilteredResources(allResources, maxDistance) {
-    let filtered = mapCenter
-      ? allResources.filter((resource) => resource.distance <= maxDistance)
-      : allResources;
-
-    const usedNearestFallback = Boolean(mapCenter && !filtered.length && allResources.length);
-    if (usedNearestFallback) {
-      filtered = allResources.slice(0, nearestFallbackLimit);
+  function computeSelection(allResources, maxDistance) {
+    if (!mapCenter) {
+      return {
+        mode: 'global',
+        nearbyCount: allResources.length,
+        displayed: allResources,
+        closestDistance: allResources[0]?.distance ?? null,
+      };
     }
 
-    return { filtered, usedNearestFallback };
+    const nearby = allResources.filter((resource) => Number.isFinite(resource.distance) && resource.distance <= maxDistance);
+    if (nearby.length) {
+      return {
+        mode: 'within',
+        nearbyCount: nearby.length,
+        displayed: nearby,
+        closestDistance: nearby[0]?.distance ?? null,
+      };
+    }
+
+    return {
+      mode: 'closest',
+      nearbyCount: 0,
+      displayed: allResources.slice(0, Math.min(CLOSEST_LIMIT, allResources.length)),
+      closestDistance: allResources[0]?.distance ?? null,
+    };
   }
 
-  function renderFilteredResources(filtered, maxDistance, usedNearestFallback) {
-    markerLayer.clearLayers();
-    resourceList.innerHTML = '';
+  function popupHtml(resource, distanceText, typeLabel) {
+    const servicesText = Array.isArray(resource.services) ? resource.services.join(' · ') : '';
+    return `
+      <div class="map-popup">
+        <div class="map-popup-title">${escapeHtml(resource.name)}</div>
+        <div class="map-popup-meta"><span class="tag tag-${markerTypeClass(resource.type)}">${escapeHtml(typeLabel)}</span></div>
+        <div class="map-popup-services"><strong>${escapeHtml(t('map_label_services'))}:</strong> ${escapeHtml(servicesText)}</div>
+        <div class="map-popup-hours"><strong>${escapeHtml(t('map_label_hours'))}:</strong> ${escapeHtml(resource.open || t('common_na'))}</div>
+        <div class="map-popup-hours"><strong>${escapeHtml(t('map_label_distance_short'))}:</strong> ${escapeHtml(distanceText)}</div>
+      </div>
+    `;
+  }
+
+  function clearMarkerLayers() {
+    contextLayer.clearLayers();
+    if (supportsClustering && markerLayer.clearLayers) {
+      markerLayer.clearLayers();
+      return;
+    }
+    if (markerLayer.clearLayers) markerLayer.clearLayers();
+  }
+
+  function renderContextMarkers(allResources, highlightedKeys) {
+    if (!mapCenter) return;
     drawCenterMarker();
 
-    if (filtered.length === 0) {
-      const noDataMessage = mapCenter
-        ? t('map_no_data_local')
-        : t('map_no_data_global');
-      resourceList.innerHTML = `<div class="resource-item">${noDataMessage}</div>`;
-      if (!String(communityInput.value || '').trim()) {
-        renderStatus(t('map_status_select'));
-      }
+    const contextCandidates = allResources
+      .filter((resource) => !highlightedKeys.has(resourceKey(resource)))
+      .slice(0, MAX_CONTEXT_MARKERS);
+
+    contextCandidates.forEach((resource) => {
+      L.marker([resource.lat, resource.lng], {
+        interactive: false,
+        keyboard: false,
+        icon: mutedMarkerIcon(),
+      }).addTo(contextLayer);
+    });
+  }
+
+  function renderStats(selection, allResources, maxDistance) {
+    if (!statsNode) return;
+
+    const lines = [];
+    if (mapCenter) {
+      lines.push(t('map_stats_showing_within', { count: selection.mode === 'within' ? selection.nearbyCount : 0, distance: maxDistance }));
+    } else {
+      lines.push(t('map_stats_showing_global', { count: selection.displayed.length }));
+    }
+
+    lines.push(t('map_stats_global_verified', { count: allResources.length }));
+
+    if (mapCenter && Number.isFinite(selection.closestDistance)) {
+      lines.push(t('map_stats_closest_match', { distance: formatDistanceValue(selection.closestDistance) || t('common_na') }));
+    }
+
+    statsNode.innerHTML = lines.map((line) => `<div class="map-stat-line">${escapeHtml(line)}</div>`).join('');
+  }
+
+  function renderListHeading(selection, maxDistance, centerDisplay) {
+    if (selection.mode === 'within') {
+      resourceListTitle.textContent = t('map_list_title_within', { distance: maxDistance });
+      resourceListSubtitle.textContent = t('map_list_subtitle_within', { count: selection.nearbyCount, center: centerDisplay });
       return;
     }
 
-    filtered.forEach((resource) => {
-      const style = markerStyleByType[resource.type] || { color: '#17a398', fillColor: '#17a398' };
-      const marker = L.circleMarker([resource.lat, resource.lng], {
-        radius: 7,
-        weight: 2,
-        color: style.color,
-        fillColor: style.fillColor,
-        fillOpacity: 0.85
-      }).addTo(markerLayer);
-      const typeLabel = resourceTypeLabel(resource.type);
-      const distanceText = mapCenter && Number.isFinite(resource.distance)
-        ? t('map_distance_away', { distance: resource.distance.toFixed(1) })
-        : t('map_distance_pending');
+    if (selection.mode === 'closest') {
+      resourceListTitle.textContent = t('map_list_title_closest');
+      resourceListSubtitle.textContent = t('map_list_subtitle_closest', { count: selection.displayed.length });
+      return;
+    }
 
-      marker.bindPopup(`<strong>${resource.name}</strong><br/>${typeLabel}<br/>${distanceText}<br/>${resource.open}`);
+    resourceListTitle.textContent = t('map_list_title_global');
+    resourceListSubtitle.textContent = t('map_list_subtitle_global', { count: selection.displayed.length });
+  }
+
+  function renderStatusCopy(selection, maxDistance, centerDisplay) {
+    if (!mapCenter) {
+      setStatus(t('map_status_applied_global_better', { count: selection.displayed.length }), 'info');
+      return;
+    }
+
+    if (selection.mode === 'within') {
+      setStatus(
+        t('map_status_applied_local_better', {
+          count: selection.nearbyCount,
+          distance: maxDistance,
+          center: centerDisplay,
+        }),
+        'ok',
+      );
+      return;
+    }
+
+    setStatus(t('map_status_no_nearby', { distance: maxDistance }), 'warn');
+  }
+
+  function updateMapView(selection) {
+    if (!mapCenter) {
+      map.setView([DEFAULT_VIEW.lat, DEFAULT_VIEW.lng], DEFAULT_VIEW.zoom);
+      return;
+    }
+
+    if (!selection.displayed.length) {
+      map.setView([mapCenter.lat, mapCenter.lng], 10);
+      return;
+    }
+
+    const bounds = L.latLngBounds([[mapCenter.lat, mapCenter.lng]]);
+    const zoomItems = selection.mode === 'closest'
+      ? selection.displayed.slice(0, Math.min(8, selection.displayed.length))
+      : selection.displayed;
+
+    zoomItems.forEach((resource) => bounds.extend([resource.lat, resource.lng]));
+
+    if (!bounds.isValid()) {
+      map.setView([mapCenter.lat, mapCenter.lng], 10);
+      return;
+    }
+
+    map.fitBounds(bounds.pad(0.25), {
+      maxZoom: selection.mode === 'within' ? 13 : 8,
+      animate: true,
+    });
+  }
+
+  function renderResources(selection, allResources, maxDistance) {
+    activeMode = selection.mode;
+    clearMarkerLayers();
+    resourceList.innerHTML = '';
+
+    const centerDisplay = centerLabel || t('map_selected_center');
+    const highlighted = new Set(selection.displayed.map((resource) => resourceKey(resource)));
+
+    renderContextMarkers(allResources, highlighted);
+    renderListHeading(selection, maxDistance, centerDisplay);
+    renderStats(selection, allResources, maxDistance);
+    renderStatusCopy(selection, maxDistance, centerDisplay);
+
+    if (selection.mode === 'closest' && mapCenter) {
+      showEmptyState(maxDistance);
+    } else {
+      hideEmptyState();
+    }
+
+    if (!selection.displayed.length) {
+      const node = document.createElement('article');
+      node.className = 'resource-item';
+      node.textContent = mapCenter ? t('map_no_data_local') : t('map_no_data_global');
+      resourceList.appendChild(node);
+      updateMapView(selection);
+      return;
+    }
+
+    selection.displayed.forEach((resource) => {
+      const typeLabel = resourceTypeLabel(resource.type);
+      const distanceText = mapCenter ? formatDistanceAway(resource.distance) : t('map_distance_pending');
+
+      const marker = L.marker([resource.lat, resource.lng], {
+        icon: resultMarkerIcon(resource.type),
+      }).bindPopup(popupHtml(resource, distanceText, typeLabel));
+      markerLayer.addLayer(marker);
 
       const node = document.createElement('article');
       node.className = 'resource-item';
       node.innerHTML = `
-        <strong>${resource.name}</strong>
-        <div><span class="tag">${typeLabel}</span> <span class="small-text">${distanceText}</span></div>
-        <div class="small-text">${resource.services.join(' · ')}</div>
-        <div class="small-text">${resource.open}</div>
+        <div class="resource-item-head">
+          <strong>${escapeHtml(resource.name)}</strong>
+          <span class="resource-distance">${escapeHtml(distanceText)}</span>
+        </div>
+        <div class="resource-meta">
+          <span class="tag tag-${markerTypeClass(resource.type)}">${escapeHtml(typeLabel)}</span>
+          <span class="resource-hours">${escapeHtml(resource.open || t('common_na'))}</span>
+        </div>
+        <div class="resource-services">${escapeHtml((resource.services || []).join(' · '))}</div>
       `;
       node.addEventListener('click', () => {
         map.setView([resource.lat, resource.lng], 13);
@@ -539,139 +890,216 @@ out tags center 200;
       resourceList.appendChild(node);
     });
 
-    if (mapCenter && usedNearestFallback) {
-      const bounds = L.latLngBounds([[mapCenter.lat, mapCenter.lng]]);
-      filtered.slice(0, 20).forEach((resource) => {
-        bounds.extend([resource.lat, resource.lng]);
-      });
-      if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.25));
-      }
-    }
+    updateMapView(selection);
+  }
 
-    if (mapCenter) {
-      renderStatus(
-        t('map_status_applied_local', {
-          count: filtered.length,
-          distance: maxDistance,
-          center: centerLabel,
-          summary: buildSummaryByType(filtered)
-        })
-      );
-    } else {
-      renderStatus(
-        t('map_status_applied_global', {
-          count: filtered.length,
-          summary: buildSummaryByType(filtered)
-        })
-      );
+  async function resolveCenter(runId) {
+    const raw = String(communityInput.value || '').trim();
+    if (!(usingCurrentLocation && raw === t('current_location') && mapCenter)) {
+      if (!raw) {
+        mapCenter = null;
+        centerLabel = '';
+        usingCurrentLocation = false;
+        showLocationConfirm('');
+        setCommunityFeedback('');
+        return;
+      }
+
+      const matchedCommunity = resolveCommunityInput(raw);
+      if (matchedCommunity) {
+        mapCenter = { lat: matchedCommunity.point.lat, lng: matchedCommunity.point.lng };
+        centerLabel = matchedCommunity.label;
+        usingCurrentLocation = false;
+        showLocationConfirm('');
+        setCommunityFeedback('');
+        communityInput.value = matchedCommunity.label;
+        return;
+      }
+
+      const geocoded = await geocodeCommunityInput(raw);
+      if (runId !== filterRunId) return;
+
+      if (geocoded) {
+        mapCenter = { lat: geocoded.lat, lng: geocoded.lng };
+        centerLabel = geocoded.label;
+        usingCurrentLocation = false;
+        showLocationConfirm('');
+        setCommunityFeedback(t('map_feedback_external_location'));
+        return;
+      }
+
+      mapCenter = null;
+      centerLabel = '';
+      usingCurrentLocation = false;
+      showLocationConfirm('');
+      setCommunityFeedback(t('map_feedback_no_supported'));
+      setStatus(t('map_feedback_no_supported'), 'warn');
     }
   }
 
   async function applyFilters() {
     const runId = ++filterRunId;
     const type = typeSelect.value;
-    const maxDistance = Number(distanceRange.value);
-    const rawCommunity = String(communityInput.value || '').trim();
+    const maxDistance = Number(distanceRange.value || DEFAULT_DISTANCE_KM);
 
-    if (!(usingCurrentLocation && rawCommunity === t('current_location') && mapCenter)) {
-      const inputMatch = resolveCommunityInput(communityInput.value);
-      if (inputMatch) {
-        usingCurrentLocation = false;
-        mapCenter = { lat: inputMatch.point.lat, lng: inputMatch.point.lng };
-        centerLabel = inputMatch.label;
-        communityInput.value = inputMatch.label;
-        map.setView([mapCenter.lat, mapCenter.lng], 11);
-      } else if (rawCommunity) {
-        const geocoded = await geocodeCommunityInput(rawCommunity);
-        if (runId !== filterRunId) return;
-
-        if (geocoded) {
-          usingCurrentLocation = false;
-          mapCenter = { lat: geocoded.lat, lng: geocoded.lng };
-          centerLabel = geocoded.label;
-          map.setView([mapCenter.lat, mapCenter.lng], 10);
-        } else {
-          mapCenter = null;
-          centerLabel = '';
-          map.setView([18, 10], 2);
-          renderStatus(t('map_status_unrecognized'));
-        }
-      } else {
-        mapCenter = null;
-        centerLabel = '';
-      }
-    }
+    setLoading(true, 'map_loading_filters');
+    await resolveCenter(runId);
+    if (runId !== filterRunId) return;
 
     const staticCombined = buildCombinedResources(type, []);
-    const staticSelection = pickFilteredResources(staticCombined, maxDistance);
-    renderFilteredResources(staticSelection.filtered, maxDistance, staticSelection.usedNearestFallback);
+    const staticSelection = computeSelection(staticCombined, maxDistance);
+    renderResources(staticSelection, staticCombined, maxDistance);
 
     if (mapCenter) {
-      fetchLiveNearbyResources(mapCenter, maxDistance, type).then((liveNearby) => {
-        if (runId !== filterRunId) return;
-        if (!Array.isArray(liveNearby) || !liveNearby.length) return;
+      const liveNearby = await fetchLiveNearbyResources(mapCenter, maxDistance, type);
+      if (runId !== filterRunId) return;
 
-        const mergedCombined = buildCombinedResources(type, liveNearby);
-        const mergedSelection = pickFilteredResources(mergedCombined, maxDistance);
-        renderFilteredResources(mergedSelection.filtered, maxDistance, mergedSelection.usedNearestFallback);
-      });
+      const mergedCombined = buildCombinedResources(type, liveNearby);
+      const mergedSelection = computeSelection(mergedCombined, maxDistance);
+      renderResources(mergedSelection, mergedCombined, maxDistance);
     }
+
+    setLoading(false);
+  }
+
+  function increaseDistanceAndApply() {
+    const current = Number(distanceRange.value || DEFAULT_DISTANCE_KM);
+    const max = Number(distanceRange.max || 500);
+    const next = Math.min(max, current + 25);
+    distanceRange.value = String(next);
+    updateDistanceLabel();
+    applyFilters();
+  }
+
+  function resetFilters() {
+    usingCurrentLocation = false;
+    mapCenter = null;
+    centerLabel = '';
+    communityInput.value = '';
+    typeSelect.value = 'All';
+    distanceRange.value = String(DEFAULT_DISTANCE_KM);
+    updateDistanceLabel();
+    setCommunityFeedback('');
+    showLocationConfirm('');
+    hideCommunitySuggestions();
+    hideEmptyState();
+    applyFilters();
   }
 
   distanceRange.addEventListener('input', updateDistanceLabel);
-
   applyButton.addEventListener('click', applyFilters);
+
+  communityInput.addEventListener('input', () => {
+    if (communityInput.value !== t('current_location')) usingCurrentLocation = false;
+    renderCommunitySuggestions(communityInput.value);
+  });
+
+  communityInput.addEventListener('focus', () => {
+    renderCommunitySuggestions(communityInput.value);
+  });
+
+  communityInput.addEventListener('blur', () => {
+    setTimeout(hideCommunitySuggestions, 120);
+  });
 
   communityInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
+      hideCommunitySuggestions();
       applyFilters();
     }
   });
 
-  communityInput.addEventListener('input', () => {
-    if (communityInput.value !== t('current_location')) {
-      usingCurrentLocation = false;
-    }
-  });
+  if (increaseDistanceButton) {
+    increaseDistanceButton.addEventListener('click', increaseDistanceAndApply);
+  }
+
+  if (showClosestButton) {
+    showClosestButton.addEventListener('click', () => {
+      if (activeMode !== 'closest') {
+        applyFilters();
+        return;
+      }
+      resourceList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const first = resourceList.querySelector('.resource-item');
+      if (first) {
+        first.style.borderColor = 'rgba(23, 163, 152, 0.55)';
+        setTimeout(() => {
+          first.style.borderColor = 'rgba(11, 60, 93, 0.1)';
+        }, 900);
+      }
+    });
+  }
+
+  if (resetMapButton) {
+    resetMapButton.addEventListener('click', resetFilters);
+  }
 
   locateButton.addEventListener('click', () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setStatus(t('map_location_failed'), 'warn');
+      return;
+    }
+
+    setLoading(true, 'map_loading_location');
+    setStatus(t('map_loading_location'), 'info');
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         mapCenter = {
           lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lng: position.coords.longitude,
         };
         usingCurrentLocation = true;
-        centerLabel = t('current_location');
         communityInput.value = t('current_location');
-        map.setView([mapCenter.lat, mapCenter.lng], 12);
+
+        const place = await reverseGeocode(mapCenter.lat, mapCenter.lng);
+        if (place) {
+          centerLabel = place;
+          showLocationConfirm(t('map_location_using_named', { place }));
+          setStatus(t('map_location_using_named', { place }), 'ok');
+        } else {
+          centerLabel = t('current_location');
+          showLocationConfirm(t('map_location_using'));
+          setStatus(t('map_location_using'), 'ok');
+        }
+
+        setCommunityFeedback('');
+        hideCommunitySuggestions();
         applyFilters();
       },
       () => {
-        alert(t('map_location_denied'));
-      }
+        setLoading(false);
+        showLocationConfirm('');
+        setStatus(t('map_location_failed'), 'warn');
+        setCommunityFeedback(t('map_location_failed_hint'));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 9000,
+        maximumAge: 120000,
+      },
     );
   });
 
   renderHotspots();
   loadCountryCentroids().then(renderGlobalLabels);
   renderGlobalLabels();
+  applyStaticMapTexts();
+  updateDistanceLabel();
   applyFilters();
 
   window.addEventListener('nutri:lang-changed', () => {
     if (usingCurrentLocation) {
-      centerLabel = t('current_location');
       communityInput.value = t('current_location');
+      if (centerLabel) {
+        showLocationConfirm(t('map_location_using_named', { place: centerLabel }));
+      }
     }
+    applyStaticMapTexts();
     updateDistanceLabel();
     renderHotspots();
     renderGlobalLabels();
     applyFilters();
   });
-
-  updateDistanceLabel();
 })();

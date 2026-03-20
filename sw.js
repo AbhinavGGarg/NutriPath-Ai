@@ -1,11 +1,11 @@
-const CACHE_NAME = 'nutripath-v20';
+const CACHE_NAME = 'nutripath-v22';
 const APP_SHELL = [
   './',
   './index.html',
   './assessment.html',
   './results.html',
   './map.html',
-  './dashboard.html',
+  './meal-builder.html',
   './learn.html',
   './auth.html',
   './settings.html',
@@ -15,7 +15,6 @@ const APP_SHELL = [
   './assessment.js',
   './results.js',
   './map.js',
-  './dashboard.js',
   './learn.js',
   './auth.js',
   './settings.js'

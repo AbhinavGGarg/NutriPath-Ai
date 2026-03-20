@@ -123,6 +123,79 @@
     resourceCards.appendChild(box);
   });
 
+  function buildNextSteps() {
+    const age = Number(report?.payload?.ageYears || 0);
+    const symptoms = Array.isArray(report?.selectedSymptoms) ? report.selectedSymptoms : [];
+    const isChild = age > 0 && age <= 17;
+    const isOlderAdult = age >= 60;
+    const hasLowAppetite = symptoms.includes('poor_appetite');
+    const hasWeightWarning = symptoms.includes('wasting') || symptoms.includes('edema') || symptoms.includes('lethargy');
+    const highUrgency = ['High', 'Urgent'].includes(category);
+
+    const steps = [];
+
+    if (highUrgency) {
+      steps.push({
+        title: 'Referral and support now',
+        desc: 'This screening suggests elevated nutrition risk. Find verified support points immediately.',
+        cta: 'Find nearby help',
+        href: './map.html',
+      });
+    }
+
+    if (isChild) {
+      steps.push({
+        title: 'Child growth support',
+        desc: 'Use child-focused feeding and warning-sign guidance for early action at home.',
+        cta: 'Open child guidance',
+        href: './learn.html#lesson-child-support',
+      });
+    }
+
+    if (isOlderAdult) {
+      steps.push({
+        title: 'Older adult nutrition check',
+        desc: 'Low appetite and weight change in seniors can be high-risk. Use the senior quick-guide now.',
+        cta: 'Open senior guidance',
+        href: './learn.html#lesson-senior-support',
+      });
+    }
+
+    if (hasLowAppetite || hasWeightWarning) {
+      steps.push({
+        title: 'Protein-first meal action',
+        desc: 'Build a practical meal from available foods and close likely protein and iron gaps.',
+        cta: 'Open Meal Builder',
+        href: './meal-builder.html',
+      });
+    }
+
+    steps.push({
+      title: 'Check harmful nutrition beliefs',
+      desc: 'Use claim checker to correct myths that can delay nutrition recovery.',
+      cta: 'Check a claim',
+      href: './learn.html#claim-checker',
+    });
+
+    return steps.slice(0, 4);
+  }
+
+  const nextStepsNode = document.getElementById('next-steps-grid');
+  if (nextStepsNode) {
+    const nextSteps = buildNextSteps();
+    nextStepsNode.innerHTML = '';
+    nextSteps.forEach((step) => {
+      const node = document.createElement('article');
+      node.className = 'card';
+      node.innerHTML = `
+        <h4>${step.title}</h4>
+        <p class="small-text">${step.desc}</p>
+        <a class="btn btn-secondary btn-small" href="${step.href}">${step.cta}</a>
+      `;
+      nextStepsNode.appendChild(node);
+    });
+  }
+
   const mealBody = document.querySelector('#meal-plan-table tbody');
   report.mealPlan.days.forEach((day) => {
     const row = document.createElement('tr');

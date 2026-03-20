@@ -1,93 +1,429 @@
 (function () {
   const t = (key, vars) => (window.NutriApp?.t ? window.NutriApp.t(key, vars) : key);
-  const tx = (key, fallback, vars) => {
-    const value = t(key, vars);
-    return value === key ? fallback : value;
+
+  const LESSONS = [
+    {
+      id: 'lesson-family-food',
+      title: 'Feed a Family With Limited Food',
+      why: 'When grocery money is tight, meal quality often drops before hunger is obvious.',
+      takeaways: [
+        'Build each meal with an energy food, a protein food, and one protective food.',
+        'Use low-cost staples: beans, eggs, peanut butter, oats, canned fish, yogurt, potatoes, frozen vegetables.',
+        'If fresh produce is limited, canned and frozen options still improve vitamin intake.',
+        'Batch-cook basics once so quick meals are possible on busy days.',
+      ],
+      now: 'Pick one low-cost protein to add at your next grocery trip, then re-run Meal Builder.',
+    },
+    {
+      id: 'lesson-warning-signs',
+      title: 'Warning Signs You Should Not Ignore',
+      why: 'Missed early signs lead to delayed treatment and harder recovery.',
+      takeaways: [
+        'Watch for low appetite, fast weight loss, weakness, frequent diarrhea, swelling, and low activity.',
+        'In children: monitor growth slowdown, fatigue, pale skin, and delayed development.',
+        'In older adults: confusion, appetite drop, and dehydration are high-risk warning signs.',
+        'Escalate quickly if swelling, severe lethargy, persistent vomiting, or confusion appears.',
+      ],
+      now: 'If severe signs appear, use Resource Map now and seek urgent evaluation.',
+    },
+    {
+      id: 'lesson-child-support',
+      title: 'Child Nutrition and Growth Support',
+      why: 'A child can look fed and still be deficient in protein, iron, or other key nutrients.',
+      takeaways: [
+        'Offer frequent small meals when appetite is low.',
+        'Include protein and iron often: eggs, beans, lentils, peanut butter, canned fish, fortified cereals.',
+        'Pair iron foods with vitamin C foods for better absorption.',
+        'Track appetite and energy weekly, not only weight alone.',
+      ],
+      now: 'Use Meal Builder with your current foods and prioritize protein + iron upgrades this week.',
+    },
+    {
+      id: 'lesson-senior-support',
+      title: 'Nutrition Support for Older Adults',
+      why: 'In older adults, low appetite and isolation can quickly cause dangerous nutrition decline.',
+      takeaways: [
+        'Watch for reduced appetite, chewing problems, unplanned weight loss, and fatigue.',
+        'Use soft, high-protein additions: yogurt, eggs, beans, soups, nut butter, milk alternatives.',
+        'Hydration is part of nutrition risk, especially when appetite is low.',
+        'Do not dismiss confusion or sudden weakness as normal aging.',
+      ],
+      now: 'If there is ongoing weight loss or confusion, seek evaluation and nearby support immediately.',
+    },
+    {
+      id: 'lesson-food-desert',
+      title: 'Food Desert / Low Access Survival Tips',
+      why: 'Many households rely on corner stores, dollar stores, or pantry items with limited options.',
+      takeaways: [
+        'Choose shelf-stable upgrades: beans, oats, canned tuna, canned beans, peanut butter, powdered milk.',
+        'Choose no-sugar or low-sodium options when possible, but focus first on consistent nutrition intake.',
+        'Build quick meals from pantry items before adding snacks or sugary drinks.',
+        'Use frozen vegetables when fresh options are costly or hard to reach.',
+      ],
+      now: 'Pick one shelf-stable protein and one protective food to add this week.',
+    },
+    {
+      id: 'lesson-cultural-flex',
+      title: 'Culturally Flexible Meal Guidance',
+      why: 'Nutrition support works best when it adapts to household food culture and what people will actually eat.',
+      takeaways: [
+        'Use food categories and substitutions instead of one fixed cuisine style.',
+        'Keep familiar staples, then improve them with protein and protective sides.',
+        'Swap by function: lentils/beans for protein, cabbage/frozen veg for protective foods, oats/rice/potatoes for energy.',
+        'Respect household preferences to improve long-term follow-through.',
+      ],
+      now: 'Choose one family-favorite dish and upgrade it with a low-cost protein add-on.',
+    },
+  ];
+
+  const CLAIM_RULES = [
+    {
+      keys: ['only expensive', 'healthy food is always expensive', 'healthy food always too expensive'],
+      verdict: 'myth',
+      explanation: 'Low-cost foods can improve nutrition when combined well. Cost matters, but expensive food is not the only path.',
+      takeaway: 'Use affordable proteins and staples first: beans, eggs, oats, peanut butter, canned fish, frozen vegetables.',
+      safer: 'Affordable foods can still build strong nutrition when meals include protein and protective foods.',
+    },
+    {
+      keys: ['overweight', 'cant be malnourished', 'cannot be malnourished'],
+      verdict: 'myth',
+      explanation: 'Body weight alone does not confirm nutrient quality. A person can be overweight and still deficient in iron, protein, or vitamins.',
+      takeaway: 'Check diet quality and warning signs, not just body size.',
+      safer: 'A person can have enough calories but still lack key nutrients.',
+    },
+    {
+      keys: ['skipping meals is fine', 'skip meals', 'big dinner'],
+      verdict: 'depends',
+      explanation: 'Meal timing affects energy, appetite, and nutrient intake. Repeated meal skipping raises nutrition risk in many households.',
+      takeaway: 'Aim for regular eating windows and include protein earlier in the day when possible.',
+      safer: 'Try smaller regular meals instead of long gaps followed by one large meal.',
+    },
+    {
+      keys: ['fresh food is the only healthy option', 'only fresh food', 'fresh only'],
+      verdict: 'myth',
+      explanation: 'Frozen and canned foods can be nutritious and practical, especially in food deserts and low-access settings.',
+      takeaway: 'Use frozen vegetables, canned beans, and canned fish when fresh options are limited.',
+      safer: 'Fresh, frozen, and canned foods can all support health when chosen carefully.',
+    },
+    {
+      keys: ['older adults naturally eat less', 'weight loss is normal', 'seniors naturally eat less'],
+      verdict: 'depends',
+      explanation: 'Appetite can change with age, but unexplained weight loss is a warning sign and should not be ignored.',
+      takeaway: 'Track appetite and weight trends. Seek help if decline continues.',
+      safer: 'Some appetite change happens with age, but persistent weight loss needs follow-up.',
+    },
+    {
+      keys: ['protein is only found in meat', 'protein only in meat'],
+      verdict: 'myth',
+      explanation: 'Protein also comes from beans, lentils, soy foods, dairy, eggs, nuts, and seeds.',
+      takeaway: 'Use low-cost protein mix-ins even when meat is expensive.',
+      safer: 'Meat is one protein source, but many affordable non-meat options also work.',
+    },
+  ];
+
+  const VOICE_MODE_CONFIG = {
+    standard: { rate: 0.98, pitch: 1, volume: 1 },
+    slow: { rate: 0.86, pitch: 1, volume: 1 },
+    field: { rate: 0.8, pitch: 0.95, volume: 1 },
   };
-  const grid = document.getElementById('lesson-grid');
-  if (!grid) return;
 
-  const localizedLessons = new Map();
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
-  function localizedValue(key, fallback) {
-    if (window.NutriApp?.hasTranslation && window.NutriApp.hasTranslation(key)) {
-      return t(key);
+  function normalizeText(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function initLessonCards(voiceApi) {
+    const grid = document.getElementById('lesson-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    LESSONS.forEach((lesson) => {
+      const node = document.createElement('article');
+      node.className = 'lesson-card lesson-card-strong';
+      node.id = lesson.id;
+      node.innerHTML = `
+        <span class="badge">Quick-use guide</span>
+        <h3>${escapeHtml(lesson.title)}</h3>
+        <p class="small-text"><strong>Why it matters:</strong> ${escapeHtml(lesson.why)}</p>
+        <h4>Practical takeaways</h4>
+        <ul>
+          ${lesson.takeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+        </ul>
+        <div class="alert alert-warn"><strong>What to do now:</strong> ${escapeHtml(lesson.now)}</div>
+        <div class="cta-row" style="margin-top: 0.7rem;">
+          <button type="button" class="btn btn-secondary" data-lesson-listen="${lesson.id}">Listen</button>
+        </div>
+      `;
+      grid.appendChild(node);
+    });
+
+    grid.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const lessonId = target.dataset.lessonListen;
+      if (!lessonId) return;
+      const lesson = LESSONS.find((item) => item.id === lessonId);
+      if (!lesson) return;
+
+      const speechText = [
+        lesson.title,
+        `Why it matters. ${lesson.why}`,
+        `Practical takeaways. ${lesson.takeaways.join(' ')}`,
+        `What to do now. ${lesson.now}`,
+      ].join(' ');
+      voiceApi.speakText(speechText);
+    });
+  }
+
+  function initVoiceAssistant() {
+    const modeNode = document.getElementById('voice-mode');
+    const playBtn = document.getElementById('voice-play');
+    const pauseBtn = document.getElementById('voice-pause');
+    const replayBtn = document.getElementById('voice-replay');
+    const stopBtn = document.getElementById('voice-stop');
+    const statusNode = document.getElementById('voice-status');
+    const scriptNode = document.getElementById('voice-script');
+
+    const synth = window.speechSynthesis;
+    const chunks = scriptNode ? [...scriptNode.querySelectorAll('[data-voice-chunk]')] : [];
+    let currentUtterances = [];
+    let isPaused = false;
+
+    function setStatus(text) {
+      if (!statusNode) return;
+      statusNode.textContent = text;
     }
-    return fallback;
+
+    function clearHighlights() {
+      chunks.forEach((chunk) => chunk.classList.remove('spoken-active'));
+    }
+
+    function bestVoice() {
+      if (!synth) return null;
+      const voices = synth.getVoices() || [];
+      if (!voices.length) return null;
+
+      const preferred = [
+        'Google US English',
+        'Microsoft Aria',
+        'Samantha',
+        'Jenny',
+        'Daniel',
+      ];
+
+      for (const name of preferred) {
+        const hit = voices.find((voice) => voice.lang?.startsWith('en') && voice.name.includes(name));
+        if (hit) return hit;
+      }
+
+      return voices.find((voice) => voice.lang?.toLowerCase().includes('en-us')) || voices.find((voice) => voice.lang?.startsWith('en')) || voices[0];
+    }
+
+    function splitSpeech(text) {
+      const raw = String(text || '').trim();
+      if (!raw) return [];
+      const sentenceParts = raw.match(/[^.!?]+[.!?]?/g) || [raw];
+      const list = [];
+      let current = '';
+      sentenceParts.forEach((part) => {
+        const next = part.trim();
+        if (!next) return;
+        if ((current + ' ' + next).trim().length > 160 && current) {
+          list.push(current.trim());
+          current = next;
+        } else {
+          current = `${current} ${next}`.trim();
+        }
+      });
+      if (current) list.push(current.trim());
+      return list;
+    }
+
+    function stopSpeech() {
+      if (!synth) return;
+      synth.cancel();
+      currentUtterances = [];
+      isPaused = false;
+      clearHighlights();
+      setStatus('Audio stopped.');
+    }
+
+    function buildUtterance(text, chunkIndex, totalChunks) {
+      const utter = new SpeechSynthesisUtterance(text);
+      const voice = bestVoice();
+      if (voice) utter.voice = voice;
+      utter.lang = 'en-US';
+
+      const mode = modeNode?.value || 'standard';
+      const config = VOICE_MODE_CONFIG[mode] || VOICE_MODE_CONFIG.standard;
+      utter.rate = config.rate;
+      utter.pitch = config.pitch;
+      utter.volume = config.volume;
+
+      utter.onstart = () => {
+        if (chunks[chunkIndex]) chunks[chunkIndex].classList.add('spoken-active');
+        setStatus(`Speaking section ${chunkIndex + 1} of ${totalChunks}...`);
+      };
+
+      utter.onend = () => {
+        if (chunks[chunkIndex]) chunks[chunkIndex].classList.remove('spoken-active');
+        if (chunkIndex === totalChunks - 1) {
+          setStatus('Audio complete.');
+          currentUtterances = [];
+          isPaused = false;
+        }
+      };
+
+      return utter;
+    }
+
+    function speakText(text) {
+      if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
+        if (window.NutriApp?.speak) {
+          window.NutriApp.speak(text);
+          return;
+        }
+        setStatus('Audio is not supported in this browser.');
+        return;
+      }
+
+      synth.cancel();
+      clearHighlights();
+
+      const pieces = splitSpeech(text);
+      currentUtterances = pieces.map((piece, idx) => buildUtterance(piece, Math.min(idx, chunks.length - 1), pieces.length));
+      currentUtterances.forEach((utter) => synth.speak(utter));
+      isPaused = false;
+    }
+
+    function playScript() {
+      if (!chunks.length) return;
+      const text = chunks.map((node) => node.textContent?.trim() || '').filter(Boolean).join(' ');
+      speakText(text);
+    }
+
+    if (playBtn) playBtn.addEventListener('click', playScript);
+
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', () => {
+        if (!synth) return;
+        if (!synth.speaking && !synth.paused) return;
+
+        if (isPaused) {
+          synth.resume();
+          isPaused = false;
+          setStatus('Audio resumed.');
+        } else {
+          synth.pause();
+          isPaused = true;
+          setStatus('Audio paused.');
+        }
+      });
+    }
+
+    if (replayBtn) replayBtn.addEventListener('click', playScript);
+    if (stopBtn) stopBtn.addEventListener('click', stopSpeech);
+
+    window.addEventListener('beforeunload', stopSpeech);
+    if (synth) synth.onvoiceschanged = () => {};
+
+    return { speakText, stopSpeech };
   }
 
-  function levelKey(level) {
-    const normalized = String(level || '').trim().toLowerCase();
-    const map = {
-      beginner: 'lesson_level_beginner',
-      essential: 'lesson_level_essential',
-      intermediate: 'lesson_level_intermediate'
-    };
-    return map[normalized] || '';
-  }
+  function initMythChecker(voiceApi) {
+    const input = document.getElementById('myth-input');
+    const checkBtn = document.getElementById('myth-check-btn');
+    const clearBtn = document.getElementById('myth-clear-btn');
+    const resultNode = document.getElementById('myth-result');
+    if (!input || !checkBtn || !clearBtn || !resultNode) return;
 
-  NutriData.lessons.forEach((lesson) => {
-    const num = String(lesson.id || '').replace('lesson-', '');
-    const localized = {
-      title: localizedValue(`lesson_${num}_title`, lesson.title),
-      content: localizedValue(`lesson_${num}_content`, lesson.content),
-      quickTip: localizedValue(`lesson_${num}_tip`, lesson.quickTip),
-      level: localizedValue(levelKey(lesson.level), lesson.level)
-    };
-    localizedLessons.set(lesson.id, localized);
+    function verdictLabel(verdict) {
+      if (verdict === 'myth') return 'Likely myth';
+      if (verdict === 'depends') return 'Partly true / depends';
+      return 'Likely fact';
+    }
 
-    const node = document.createElement('article');
-    node.className = 'lesson-card';
-    node.innerHTML = `
-      <span class="badge">${localized.level}</span>
-      <h3>${localized.title}</h3>
-      <p class="small-text">${localized.content}</p>
-      <div class="alert alert-warn">${localizedValue('learn_quick_tip_prefix', 'Quick tip')}: ${localized.quickTip}</div>
-      <div class="cta-row" style="margin-top: 0.7rem;">
-        <button type="button" class="btn btn-secondary" data-speak="${lesson.id}">${t('learn_btn_listen')}</button>
-      </div>
-    `;
-    grid.appendChild(node);
-  });
+    function verdictClass(verdict) {
+      if (verdict === 'myth') return 'claim-badge-myth';
+      if (verdict === 'depends') return 'claim-badge-depends';
+      return 'claim-badge-fact';
+    }
 
-  grid.addEventListener('click', (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-    const id = target.dataset.speak;
-    if (!id) return;
+    function findRule(text) {
+      const normalized = normalizeText(text);
+      return CLAIM_RULES.find((rule) => rule.keys.some((key) => normalized.includes(normalizeText(key))));
+    }
 
-    const lesson = localizedLessons.get(id);
-    if (!lesson) return;
-    NutriApp.speak(
-      t('learn_speak_lesson', {
-        title: lesson.title,
-        content: lesson.content,
-        tip: lesson.quickTip
-      })
-    );
-  });
+    function renderClaimResult(rule, originalClaim) {
+      const safeFallback = {
+        verdict: 'depends',
+        explanation: 'We cannot fully verify that exact claim yet from this quick checker.',
+        takeaway: 'Use a safer rule: build meals with protein + protective foods and watch warning signs early.',
+        safer: 'A full plate is not always a nourished plate. Focus on nutrient quality, not only calories.',
+      };
 
-  const feedback = document.getElementById('quiz-feedback');
-  document.querySelectorAll('[data-answer]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const answer = button.getAttribute('data-answer');
-      if (answer === 'myth') {
-        feedback.textContent = t('learn_quiz_correct');
-        feedback.style.color = '#11825f';
-      } else {
-        feedback.textContent = t('learn_quiz_wrong');
-        feedback.style.color = '#e63946';
+      const output = rule || safeFallback;
+      resultNode.classList.remove('hide');
+      resultNode.innerHTML = `
+        <div class="claim-result-head">
+          <span class="tag ${verdictClass(output.verdict)}">${verdictLabel(output.verdict)}</span>
+        </div>
+        <p class="small-text"><strong>Claim:</strong> ${escapeHtml(originalClaim)}</p>
+        <p class="small-text"><strong>Why:</strong> ${escapeHtml(output.explanation)}</p>
+        <p class="small-text"><strong>What to do instead:</strong> ${escapeHtml(output.takeaway)}</p>
+        <div class="alert alert-success"><strong>Safer wording:</strong> ${escapeHtml(output.safer)}</div>
+        <div class="cta-row" style="margin-top: 0.65rem;">
+          <button type="button" class="btn btn-secondary btn-small" id="claim-listen">Listen</button>
+        </div>
+      `;
+
+      const listenBtn = document.getElementById('claim-listen');
+      if (listenBtn) {
+        listenBtn.addEventListener('click', () => {
+          voiceApi.speakText(
+            `Claim check result. ${verdictLabel(output.verdict)}. ${output.explanation}. What to do instead. ${output.takeaway}. Safer wording: ${output.safer}`
+          );
+        });
+      }
+    }
+
+    checkBtn.addEventListener('click', () => {
+      const claim = String(input.value || '').trim();
+      if (!claim) {
+        resultNode.classList.remove('hide');
+        resultNode.innerHTML = '<p class="small-text">Type a claim first so NutriPath can check it.</p>';
+        return;
+      }
+      const matchedRule = findRule(claim);
+      renderClaimResult(matchedRule, claim);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      resultNode.classList.add('hide');
+      resultNode.innerHTML = '';
+    });
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        checkBtn.click();
       }
     });
-  });
-
-  document.getElementById('speak-warning').addEventListener('click', () => {
-    NutriApp.speak(t('learn_speak_warning'));
-  });
-
-  document.getElementById('speak-meal').addEventListener('click', () => {
-    NutriApp.speak(t('learn_speak_meal'));
-  });
+  }
 
   function initFoodBuilder() {
     const input = document.getElementById('hub-food-input');
@@ -100,19 +436,20 @@
     const resultShell = document.getElementById('hub-food-results');
     const mealList = document.getElementById('hub-meal-list');
     const nutrientList = document.getElementById('hub-nutrient-list');
+    const gapList = document.getElementById('hub-gap-list');
     const addonList = document.getElementById('hub-addon-list');
+    const swapList = document.getElementById('hub-swap-list');
+    const nextStepsNode = document.getElementById('hub-next-steps');
 
-    if (!input || !datalist || !addButton || !clearButton || !analyzeButton || !selectedNode || !statusNode || !resultShell || !mealList || !nutrientList || !addonList) {
+    if (!input || !datalist || !addButton || !clearButton || !analyzeButton || !selectedNode || !statusNode || !resultShell || !mealList || !nutrientList || !gapList || !addonList || !swapList || !nextStepsNode) {
       return;
     }
 
     const selectedFoods = new Map();
-    let customCounter = 1;
-    let hasAnalysis = false;
-
     const foods = NutriData.foods.slice().sort((a, b) => a.name.localeCompare(b.name));
+    let customCounter = 1;
 
-    const nutrientFallback = {
+    const nutrientTitles = {
       protein: 'Protein',
       iron: 'Iron',
       zinc: 'Zinc',
@@ -124,8 +461,12 @@
       carbs: 'Carbohydrates',
       fiber: 'Fiber',
       fat: 'Healthy fats',
-      omega3: 'Omega-3'
+      omega3: 'Omega-3 fats',
     };
+
+    const criticalNutrients = ['protein', 'iron', 'vitaminA', 'vitaminC', 'fiber', 'zinc', 'calories'];
+
+    const processedKeywords = ['chips', 'cookie', 'instant noodle', 'ramen', 'soda', 'fries', 'candy'];
 
     function foodLabel(food) {
       if (food.custom) return food.name;
@@ -134,13 +475,8 @@
       return translated === key ? food.name : translated;
     }
 
-    function nutrientLabel(nutrientKey) {
-      if (nutrientKey === 'vitaminA') return tx('nutrient_vitamin_a', nutrientFallback.vitaminA);
-      if (nutrientKey === 'protein') return tx('nutrient_protein', nutrientFallback.protein);
-      if (nutrientKey === 'iron') return tx('nutrient_iron', nutrientFallback.iron);
-      if (nutrientKey === 'zinc') return tx('nutrient_zinc', nutrientFallback.zinc);
-      if (nutrientKey === 'calories') return tx('nutrient_calories', nutrientFallback.calories);
-      return nutrientFallback[nutrientKey] || nutrientKey;
+    function nutrientLabel(key) {
+      return nutrientTitles[key] || key;
     }
 
     function setStatus(text) {
@@ -156,395 +492,245 @@
       });
     }
 
-    function renderSelectedFoods() {
-      selectedNode.innerHTML = '';
-      if (!selectedFoods.size) {
-        setStatus('No foods added yet. Add foods and click Analyze Foods.');
-        return;
-      }
-
-      [...selectedFoods.values()].forEach((food) => {
-        const chip = document.createElement('span');
-        chip.className = 'selected-food-chip';
-        chip.innerHTML = `
-          ${foodLabel(food)}
-          <button type="button" data-remove-food="${food.key}" aria-label="Remove ${foodLabel(food)}">x</button>
-        `;
-        selectedNode.appendChild(chip);
-      });
-      setStatus(`Selected ${selectedFoods.size} food(s). Click Analyze Foods to see insights.`);
-    }
-
-    function clearAnalysisLists() {
-      mealList.innerHTML = '';
-      nutrientList.innerHTML = '';
-      addonList.innerHTML = '';
-    }
-
-    function normalizeText(value) {
-      return String(value || '')
-        .trim()
-        .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-
-    function toTitleCase(value) {
-      return String(value || '')
-        .trim()
-        .split(/\s+/)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-        .join(' ');
-    }
-
     function inferCustomNutrients(name) {
       const text = normalizeText(name);
-      const found = new Set();
-      const keywordGroups = [
-        { words: ['bread', 'roti', 'chapati', 'rice', 'wheat', 'maize', 'corn', 'oats', 'millet', 'sorghum', 'potato', 'cassava', 'yam', 'quinoa', 'barley', 'pasta', 'noodle'], nutrients: ['carbs', 'calories', 'fiber'] },
-        { words: ['beans', 'lentil', 'chickpea', 'pea', 'soy', 'tofu', 'egg', 'fish', 'chicken', 'beef', 'goat', 'meat', 'milk', 'yogurt', 'cheese', 'groundnut', 'peanut', 'nut'], nutrients: ['protein'] },
-        { words: ['spinach', 'kale', 'moringa', 'leaf', 'leafy', 'carrot', 'pumpkin', 'mango', 'papaya', 'orange', 'guava', 'broccoli', 'tomato', 'cabbage', 'okra', 'fruit', 'vegetable'], nutrients: ['vitaminA', 'vitaminC', 'folate'] },
-        { words: ['seed', 'sesame', 'sunflower', 'almond', 'avocado', 'oil', 'butter'], nutrients: ['fat', 'calories'] },
-        { words: ['liver', 'beef', 'spinach', 'lentil'], nutrients: ['iron'] },
-        { words: ['fish', 'egg', 'meat', 'bean'], nutrients: ['zinc'] }
+      const nutrients = new Set();
+
+      const rules = [
+        { words: ['beans', 'lentil', 'egg', 'tuna', 'fish', 'chicken', 'turkey', 'tofu', 'peanut', 'yogurt', 'milk'], nutrients: ['protein'] },
+        { words: ['rice', 'bread', 'pasta', 'potato', 'oat', 'cereal', 'tortilla'], nutrients: ['carbs', 'calories'] },
+        { words: ['spinach', 'kale', 'broccoli', 'carrot', 'pepper', 'tomato', 'orange', 'fruit', 'vegetable'], nutrients: ['vitaminA', 'vitaminC', 'fiber'] },
+        { words: ['nut', 'seed', 'avocado', 'oil', 'butter'], nutrients: ['fat', 'calories'] },
       ];
 
-      keywordGroups.forEach((group) => {
-        if (group.words.some((word) => text.includes(word))) {
-          group.nutrients.forEach((nutrient) => found.add(nutrient));
+      rules.forEach((rule) => {
+        if (rule.words.some((word) => text.includes(word))) {
+          rule.nutrients.forEach((item) => nutrients.add(item));
         }
       });
 
-      if (!found.size) {
-        found.add('calories');
-      }
-      return [...found];
+      if (!nutrients.size) nutrients.add('calories');
+      return [...nutrients];
     }
 
-    function createCustomFood(raw) {
+    function makeCustomFood(raw) {
       const clean = String(raw || '').trim();
-      const name = toTitleCase(clean);
-      const existing = [...selectedFoods.values()].find((food) => normalizeText(food.name) === normalizeText(name));
-      if (existing) return existing;
+      const titled = clean
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((part) => part[0].toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
 
       const id = `custom_${customCounter++}`;
       return {
         id,
         key: id,
-        name,
         custom: true,
-        nutrients: inferCustomNutrients(name),
-        cost: 1.4,
-        score: 55
+        name: titled,
+        nutrients: inferCustomNutrients(titled),
+        cost: 1.6,
+        score: 52,
       };
     }
 
-    function resolveFoodFromInput(raw) {
+    function resolveFood(raw) {
       const query = normalizeText(raw);
       if (!query) return null;
 
       const exact = foods.find((food) => normalizeText(food.name) === query || normalizeText(foodLabel(food)) === query);
       if (exact) return { ...exact, key: exact.id, custom: false };
 
-      const close = foods.find(
-        (food) => normalizeText(food.name).includes(query) || normalizeText(foodLabel(food)).includes(query)
-      );
-      if (close) return { ...close, key: close.id, custom: false };
+      const near = foods.find((food) => normalizeText(food.name).includes(query) || normalizeText(foodLabel(food)).includes(query));
+      if (near) return { ...near, key: near.id, custom: false };
 
-      return createCustomFood(raw);
+      return makeCustomFood(raw);
+    }
+
+    function renderSelectedFoods() {
+      selectedNode.innerHTML = '';
+      const all = [...selectedFoods.values()];
+      if (!all.length) {
+        setStatus('No foods added yet. Add foods you currently have at home.');
+        return;
+      }
+
+      all.forEach((food) => {
+        const chip = document.createElement('span');
+        chip.className = 'selected-food-chip';
+        chip.innerHTML = `${escapeHtml(foodLabel(food))} <button type="button" data-remove-food="${food.key}" aria-label="Remove ${escapeHtml(foodLabel(food))}">x</button>`;
+        selectedNode.appendChild(chip);
+      });
+      setStatus(`Selected ${all.length} food item(s). Click Build Meal Plan.`);
     }
 
     function addFood() {
-      const match = resolveFoodFromInput(input.value);
-      if (!match) {
-        setStatus('Type a food name first, then click Add food.');
+      const value = String(input.value || '').trim();
+      const resolved = resolveFood(value);
+      if (!resolved) {
+        setStatus('Type a food first, then click Add Food.');
         return;
       }
-      selectedFoods.set(match.key, match);
+      selectedFoods.set(resolved.key, resolved);
       input.value = '';
-      hasAnalysis = false;
-      resultShell.classList.add('hide');
-      clearAnalysisLists();
       renderSelectedFoods();
+      resultShell.classList.add('hide');
     }
 
-    function listToUi(node, items, fallback) {
+    function clearResults() {
+      [mealList, nutrientList, gapList, addonList, swapList].forEach((node) => {
+        node.innerHTML = '';
+      });
+      nextStepsNode.innerHTML = '';
+    }
+
+    function listToNode(node, items, emptyText) {
       node.innerHTML = '';
       if (!items.length) {
         const li = document.createElement('li');
-        li.textContent = fallback;
+        li.textContent = emptyText;
         node.appendChild(li);
         return;
       }
       items.forEach((item) => {
         const li = document.createElement('li');
-        li.textContent = item;
+        li.innerHTML = item;
         node.appendChild(li);
       });
     }
 
-    function canonicalText(food) {
-      return normalizeText(`${food.id} ${food.name}`);
+    function categorizeFoods(foodList) {
+      const hasNutrient = (food, nutrient) => food.nutrients.includes(nutrient);
+      return {
+        protein: foodList.filter((food) => hasNutrient(food, 'protein')),
+        energy: foodList.filter((food) => hasNutrient(food, 'carbs') || hasNutrient(food, 'calories')),
+        protective: foodList.filter((food) => hasNutrient(food, 'vitaminA') || hasNutrient(food, 'vitaminC') || hasNutrient(food, 'fiber') || hasNutrient(food, 'iron')),
+      };
     }
 
-    function hasWord(food, words) {
-      const text = canonicalText(food);
-      return words.some((word) => text.includes(word));
+    function mealIdeas(foodList) {
+      const groups = categorizeFoods(foodList);
+      const ideas = [];
+
+      function first(list) {
+        return list.length ? list[0] : null;
+      }
+
+      const protein = first(groups.protein) || first(foodList);
+      const energy = first(groups.energy) || first(foodList);
+      const protective = first(groups.protective) || first(foodList);
+
+      if (protein && energy && protective) {
+        ideas.push(`<strong>Balanced pantry bowl</strong><br/>Use ${escapeHtml(foodLabel(energy))} as base, add ${escapeHtml(foodLabel(protein))}, then top with ${escapeHtml(foodLabel(protective))}.`);
+      }
+
+      if (groups.protein.length >= 1 && groups.protective.length >= 1) {
+        ideas.push(`<strong>Protein + protective plate</strong><br/>Cook ${escapeHtml(foodLabel(groups.protein[0]))} and add ${escapeHtml(foodLabel(groups.protective[0]))}. Serve with any available starch.`);
+      }
+
+      if (foodList.length >= 2) {
+        ideas.push(`<strong>Fast mix meal</strong><br/>Combine ${escapeHtml(foodLabel(foodList[0]))} and ${escapeHtml(foodLabel(foodList[1]))}, then add one produce or bean item if available.`);
+      }
+
+      return ideas.slice(0, 3);
     }
 
-    function isBread(food) {
-      return hasWord(food, ['bread', 'roti', 'chapati', 'tortilla', 'pita', 'bun']);
-    }
-
-    function isEgg(food) {
-      return hasWord(food, ['egg']);
-    }
-
-    function isDairy(food) {
-      return hasWord(food, ['milk', 'yogurt', 'cheese', 'soy milk']);
-    }
-
-    function isLegume(food) {
-      return hasWord(food, ['bean', 'lentil', 'chickpea', 'pea', 'cowpea', 'gram']);
-    }
-
-    function isGrainOrStarch(food) {
-      return hasWord(food, ['rice', 'maize', 'corn', 'millet', 'sorghum', 'oat', 'quinoa', 'barley', 'wheat', 'cassava', 'yam', 'potato']);
-    }
-
-    function isMeatOrFish(food) {
-      return hasWord(food, ['fish', 'sardine', 'tilapia', 'anchov', 'chicken', 'beef', 'goat', 'liver', 'meat']);
-    }
-
-    function isLeafyOrVeg(food) {
-      return hasWord(food, ['spinach', 'kale', 'moringa', 'cabbage', 'broccoli', 'carrot', 'tomato', 'onion', 'okra', 'pumpkin', 'amaranth', 'beetroot']);
-    }
-
-    function isFruit(food) {
-      return hasWord(food, ['banana', 'mango', 'orange', 'papaya', 'guava', 'apple', 'avocado', 'date', 'fruit']);
-    }
-
-    function isNutsOrSeeds(food) {
-      return hasWord(food, ['nut', 'seed', 'peanut', 'groundnut', 'sesame', 'sunflower', 'almond', 'paste']);
-    }
-
-    function portionHint(food) {
-      if (!food) return '';
-      if (isBread(food)) return `2 slices ${foodLabel(food)}`;
-      if (isEgg(food)) return `2 ${foodLabel(food)}`;
-      if (isDairy(food)) return `1 cup ${foodLabel(food)}`;
-      if (isLegume(food)) return `3/4 cup cooked ${foodLabel(food)}`;
-      if (isGrainOrStarch(food)) return `1 cup cooked ${foodLabel(food)}`;
-      if (isMeatOrFish(food)) return `100 g ${foodLabel(food)}`;
-      if (isLeafyOrVeg(food)) return `1 cup chopped ${foodLabel(food)}`;
-      if (isFruit(food)) return `1 medium ${foodLabel(food)}`;
-      if (isNutsOrSeeds(food)) return `2 tbsp ${foodLabel(food)}`;
-      return `1 serving ${foodLabel(food)}`;
-    }
-
-    function uniqueFoods(...groups) {
-      const map = new Map();
-      groups.flat().filter(Boolean).forEach((food) => {
-        if (!map.has(food.id)) map.set(food.id, food);
+    function analyzeCoverage(foodList) {
+      const coverage = new Map();
+      foodList.forEach((food) => {
+        food.nutrients.forEach((nutrient) => {
+          if (!coverage.has(nutrient)) coverage.set(nutrient, []);
+          coverage.get(nutrient).push(foodLabel(food));
+          if (nutrient === 'carbs' || nutrient === 'fat') {
+            if (!coverage.has('calories')) coverage.set('calories', []);
+            coverage.get('calories').push(foodLabel(food));
+          }
+        });
       });
-      return [...map.values()];
-    }
-
-    function renderMealIdeas(recipes) {
-      mealList.innerHTML = '';
-      if (!recipes.length) {
-        const li = document.createElement('li');
-        li.textContent = 'No meal ideas yet.';
-        mealList.appendChild(li);
-        return;
-      }
-
-      recipes.forEach((recipe) => {
-        const li = document.createElement('li');
-        li.className = 'meal-idea-item';
-
-        const ingredientText = recipe.ingredients.map((food) => portionHint(food)).join(', ');
-        const stepText = recipe.steps.join(' ');
-        li.innerHTML = `
-          <strong class="meal-idea-name">${recipe.name}</strong>
-          <div class="small-text"><strong>Ingredients:</strong> ${ingredientText}</div>
-          <div class="small-text"><strong>How to make:</strong> ${stepText}</div>
-          <div class="small-text"><strong>Nutrition focus:</strong> ${recipe.benefit}</div>
-        `;
-        mealList.appendChild(li);
-      });
-    }
-
-    function prepStep(food) {
-      if (isBread(food)) return `Toast ${portionHint(food)} until warm and lightly crisp.`;
-      if (isEgg(food)) return `Boil or scramble ${portionHint(food)} until fully cooked.`;
-      if (isLegume(food)) return `Boil ${portionHint(food)} with water until tender.`;
-      if (isGrainOrStarch(food)) return `Cook ${portionHint(food)} with water until soft.`;
-      if (isMeatOrFish(food)) return `Cook ${portionHint(food)} thoroughly in a pan or pot.`;
-      if (isLeafyOrVeg(food)) return `Wash and chop ${portionHint(food)}, then steam or saute for 3-5 minutes.`;
-      if (isFruit(food)) return `Wash and slice ${portionHint(food)} just before serving.`;
-      if (isNutsOrSeeds(food)) return `Add ${portionHint(food)} at the end as topping.`;
-      return `Prepare ${portionHint(food)} in your usual safe cooking method.`;
-    }
-
-    function finalServeStep(parts, base) {
-      const hasBreadFood = parts.some((food) => isBread(food));
-      const hasFruitFood = parts.some((food) => isFruit(food));
-      const cookableFoods = parts.filter((food) => !isBread(food) && !isFruit(food) && !isNutsOrSeeds(food));
-
-      if (hasBreadFood) {
-        return 'Use bread as a base or side. Add prepared foods on top or alongside instead of boiling or mixing bread.';
-      }
-
-      if (!isBread(base) && cookableFoods.length >= 2) {
-        return 'Combine the cooked items in one pan for 2-3 minutes, then serve warm.';
-      }
-
-      if (hasFruitFood) {
-        return 'Serve fruit on the side after the main meal for extra vitamins.';
-      }
-
-      return 'Plate the prepared foods together and serve immediately.';
-    }
-
-    function buildRecipes(selectedFoods) {
-      const carbFoods = selectedFoods.filter((food) => food.nutrients.includes('carbs'));
-      const proteinFoods = selectedFoods.filter((food) => food.nutrients.includes('protein'));
-      const protectiveFoods = selectedFoods.filter((food) =>
-        food.nutrients.some((nutrient) => ['vitaminA', 'vitaminC', 'iron', 'folate'].includes(nutrient))
-      );
-      const flavorFoods = selectedFoods.filter((food) => ['onion', 'tomato', 'okra', 'cabbage'].includes(food.id));
-
-      const recipes = [];
-
-      function addRecipe(name, ingredients, benefit) {
-        const parts = uniqueFoods(ingredients).slice(0, 5);
-        if (!parts.length) return;
-        const key = parts.map((food) => food.id).sort().join('|');
-        if (recipes.some((item) => item.key === key)) return;
-
-        const base = parts.find((food) => isBread(food) || isGrainOrStarch(food) || isLegume(food)) || parts[0];
-        const rest = parts.filter((food) => food.id !== base.id);
-        const steps = [prepStep(base)];
-        rest.slice(0, 2).forEach((food) => steps.push(prepStep(food)));
-        steps.push(finalServeStep(parts, base));
-
-        recipes.push({ key, name, ingredients: parts, benefit, steps });
-      }
-
-      if (carbFoods.length && proteinFoods.length && protectiveFoods.length) {
-        addRecipe(
-          `${foodLabel(proteinFoods[0])} Nourish Bowl`,
-          [carbFoods[0], proteinFoods[0], protectiveFoods[0], flavorFoods[0]],
-          'Balanced energy + protein + protective vitamins'
-        );
-      }
-
-      if (proteinFoods.length >= 2) {
-        addRecipe(
-          `${foodLabel(proteinFoods[0])} Protein Stew`,
-          [proteinFoods[0], proteinFoods[1], protectiveFoods[0], flavorFoods[0]],
-          'High protein support for growth and recovery'
-        );
-      }
-
-      if (protectiveFoods.length) {
-        addRecipe(
-          `Iron Boost ${foodLabel(protectiveFoods[0])} Mix`,
-          [protectiveFoods[0], proteinFoods[0], carbFoods[0], flavorFoods[0]],
-          'Iron + vitamin support for better blood health'
-        );
-      }
-
-      if (carbFoods.length) {
-        addRecipe(
-          `Family Energy ${foodLabel(carbFoods[0])} Plate`,
-          [carbFoods[0], proteinFoods[0], protectiveFoods[0], selectedFoods[0]],
-          'Affordable calories with better nutrient density'
-        );
-      }
-
-      if (recipes.length < 3 && selectedFoods.length >= 2) {
-        addRecipe(
-          `${foodLabel(selectedFoods[0])} and ${foodLabel(selectedFoods[1])} Home Plate`,
-          [selectedFoods[0], selectedFoods[1], selectedFoods[2]],
-          'Simple meal using what you already have'
-        );
-      }
-
-      return recipes.slice(0, 5);
+      return coverage;
     }
 
     function analyzeFoods() {
-      const selectedFoodList = [...selectedFoods.values()];
-      if (!selectedFoodList.length) {
-        setStatus('Add at least one food before analysis.');
+      const selected = [...selectedFoods.values()];
+      if (!selected.length) {
+        setStatus('Add at least one food to analyze.');
         resultShell.classList.add('hide');
         return;
       }
 
-      const mealIdeas = buildRecipes(selectedFoodList);
+      const ideas = mealIdeas(selected);
+      const coverage = analyzeCoverage(selected);
 
-      const nutrientToFoods = new Map();
-      selectedFoodList.forEach((food) => {
-        food.nutrients.forEach((nutrient) => {
-          if (!nutrientToFoods.has(nutrient)) nutrientToFoods.set(nutrient, new Set());
-          nutrientToFoods.get(nutrient).add(foodLabel(food));
-          if (nutrient === 'carbs' || nutrient === 'fat') {
-            if (!nutrientToFoods.has('calories')) nutrientToFoods.set('calories', new Set());
-            nutrientToFoods.get('calories').add(foodLabel(food));
-          }
+      const strengths = [...coverage.entries()]
+        .filter(([nutrient]) => criticalNutrients.includes(nutrient))
+        .sort((a, b) => b[1].length - a[1].length)
+        .slice(0, 5)
+        .map(([nutrient, foodNames]) => `<strong>${nutrientLabel(nutrient)}:</strong> ${escapeHtml([...new Set(foodNames)].slice(0, 3).join(', '))}`);
+
+      const gaps = criticalNutrients
+        .filter((nutrient) => !coverage.has(nutrient))
+        .map((nutrient) => {
+          const guidance = nutrient === 'protein'
+            ? 'Add a low-cost protein soon (beans, eggs, canned fish, peanut butter).'
+            : nutrient === 'iron'
+              ? 'Add iron support (lentils, beans, fortified cereal, leafy greens).'
+              : nutrient === 'vitaminA'
+                ? 'Add orange/dark-green produce or frozen vegetables.'
+                : nutrient === 'vitaminC'
+                  ? 'Add fruit or tomato/pepper/cabbage when available.'
+                  : nutrient === 'fiber'
+                    ? 'Add oats, beans, whole grains, or vegetables.'
+                    : nutrient === 'calories'
+                      ? 'Add enough energy foods so meals are not too small.'
+                      : 'Add variety across food groups.';
+          return `<strong>${nutrientLabel(nutrient)} gap:</strong> ${guidance}`;
         });
-      });
 
-      const nutrientInsights = [...nutrientToFoods.entries()]
-        .map(([nutrient, foodSet]) => `${nutrientLabel(nutrient)}: ${[...foodSet].slice(0, 3).join(', ')}`)
-        .sort((a, b) => a.localeCompare(b));
+      const knownSelectedIds = new Set(selected.filter((food) => !food.custom).map((food) => food.id));
+      const addNext = foods
+        .filter((food) => !knownSelectedIds.has(food.id))
+        .map((food) => {
+          const matched = criticalNutrients.filter((n) => food.nutrients.includes(n) || ((n === 'calories') && (food.nutrients.includes('carbs') || food.nutrients.includes('fat'))));
+          return { food, matched: [...new Set(matched)] };
+        })
+        .filter((entry) => entry.matched.length)
+        .sort((a, b) => b.matched.length - a.matched.length || a.food.cost - b.food.cost)
+        .slice(0, 6)
+        .map((entry) => `<strong>${escapeHtml(foodLabel(entry.food))}</strong> (${entry.food.cost.toFixed(2)} est.) -> ${escapeHtml(entry.matched.map(nutrientLabel).join(', '))}`);
 
-      const targetNutrients = ['protein', 'iron', 'vitaminA', 'zinc', 'vitaminC', 'calories'];
-      const missing = targetNutrients.filter((nutrient) => !nutrientToFoods.has(nutrient));
-      const addons = [];
+      const swaps = [];
+      if (!coverage.has('protein')) swaps.push('No protein item detected: try eggs, beans, lentils, peanut butter, canned tuna, or yogurt.');
+      if (!coverage.has('vitaminA')) swaps.push('Missing protective produce: try frozen mixed vegetables, cabbage, carrots, or canned pumpkin.');
+      if (!coverage.has('iron')) swaps.push('Need iron support: try lentils, fortified cereal, beans, spinach, or chicken liver.');
+      if (!coverage.has('fiber')) swaps.push('Too refined/carbohydrate-heavy: swap some white starch with oats, beans, brown rice, or vegetables.');
 
-      if (missing.length) {
-        const selectedKnownIds = new Set(selectedFoodList.filter((food) => !food.custom).map((food) => food.id));
-        const candidates = foods
-          .filter((food) => !selectedKnownIds.has(food.id))
-          .map((food) => {
-            const matches = [];
-            food.nutrients.forEach((nutrient) => {
-              if (missing.includes(nutrient)) matches.push(nutrient);
-              if ((nutrient === 'carbs' || nutrient === 'fat') && missing.includes('calories')) matches.push('calories');
-            });
-            return { food, matches: [...new Set(matches)] };
-          })
-          .filter((entry) => entry.matches.length)
-          .sort((a, b) => b.matches.length - a.matches.length || a.food.cost - b.food.cost)
-          .slice(0, 6);
-
-        candidates.forEach((entry) => {
-          addons.push(
-            `${foodLabel(entry.food)} -> adds ${entry.matches.map((nutrient) => nutrientLabel(nutrient)).join(', ')}`
-          );
-        });
-      } else {
-        addons.push('Great coverage across core nutrients. Keep rotating foods for diversity.');
+      const selectedText = selected.map((food) => normalizeText(food.name)).join(' ');
+      const processedHits = processedKeywords.filter((word) => selectedText.includes(word));
+      if (processedHits.length) {
+        swaps.push('Several highly processed foods detected. Keep them if needed, but add one protein and one protective food in the same meal.');
       }
 
-      renderMealIdeas(mealIdeas);
-      listToUi(nutrientList, nutrientInsights, 'No nutrient data yet.');
-      listToUi(addonList, addons, 'No add-on suggestions.');
+      listToNode(mealList, ideas, 'No meal idea generated yet. Add at least two foods.');
+      listToNode(nutrientList, strengths, 'No clear strengths yet. Add more foods for better analysis.');
+      listToNode(gapList, gaps, 'Core nutrient coverage looks good right now. Keep rotating foods for diversity.');
+      listToNode(addonList, addNext, 'No add-on suggestions yet.');
+      listToNode(swapList, swaps, 'No major swaps needed right now.');
+
+      nextStepsNode.innerHTML = `
+        <p><strong>Next step 1:</strong> Build one meal from "Best meal idea now" tonight.</p>
+        <p><strong>Next step 2:</strong> Add one item from "Cheapest helpful foods to add" this week.</p>
+        <p><strong>Next step 3:</strong> <a href="./learn.html#claim-checker">Check a nutrition claim</a> if someone in the household is unsure what is true.</p>
+        <p><strong>Next step 4:</strong> <a href="./map.html">Find local support</a> if food access is unstable.</p>
+      `;
+
       resultShell.classList.remove('hide');
-      hasAnalysis = true;
-      setStatus(`Analysis ready for ${selectedFoodList.length} selected food(s).`);
+      setStatus(`Meal analysis ready for ${selected.length} food item(s).`);
     }
 
     addButton.addEventListener('click', addFood);
     clearButton.addEventListener('click', () => {
       selectedFoods.clear();
-      hasAnalysis = false;
       input.value = '';
-      clearAnalysisLists();
+      clearResults();
       resultShell.classList.add('hide');
       renderSelectedFoods();
     });
@@ -563,21 +749,19 @@
       const removeId = target.dataset.removeFood;
       if (!removeId) return;
       selectedFoods.delete(removeId);
-      hasAnalysis = false;
-      resultShell.classList.add('hide');
-      clearAnalysisLists();
       renderSelectedFoods();
+      resultShell.classList.add('hide');
+      clearResults();
     });
 
-    window.addEventListener('nutri:lang-changed', () => {
-      renderFoodOptions();
-      renderSelectedFoods();
-      if (hasAnalysis) analyzeFoods();
-    });
+    window.addEventListener('nutri:lang-changed', renderFoodOptions);
 
     renderFoodOptions();
     renderSelectedFoods();
   }
 
+  const voiceApi = initVoiceAssistant() || { speakText: (text) => window.NutriApp?.speak?.(text), stopSpeech: () => {} };
+  initLessonCards(voiceApi);
+  initMythChecker(voiceApi);
   initFoodBuilder();
 })();

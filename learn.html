@@ -15,86 +15,82 @@
  <a class="nav-link" data-nav="home" href="./index.html">Home</a>
  <a class="nav-link" data-nav="assessment" href="./assessment.html">Assessment</a>
  <a class="nav-link" data-nav="map" href="./map.html">Resource Map</a>
- <a class="nav-link" data-nav="dashboard" href="./dashboard.html">Program Dashboard</a>
+ <a class="nav-link" data-nav="meal" href="./meal-builder.html">Meal Builder</a>
  <a class="nav-link" data-nav="learn" href="./learn.html">Learning Hub</a>
  </nav>
  </div>
  </header>
 
  <main class="container">
- <section class="page-header">
- <h1 class="page-title" data-i18n="learn_title">Nutrition Learning Hub</h1>
- <p class="page-desc" data-i18n="learn_desc">Short, practical, low-literacy lessons that individuals, families, caregivers, and CHWs can apply immediately.</p>
+ <section class="page-header" id="quick-guides">
+ <h1 class="page-title">Quick Guidance for Families and Caregivers</h1>
+ <p class="page-desc">
+ Short, practical, low-literacy guidance for U.S. households dealing with food insecurity, nutrition confusion,
+ food desert barriers, and missed warning signs.
+ </p>
  </section>
 
  <section class="section lesson-grid" id="lesson-grid"></section>
 
- <section class="section">
+ <section class="section grid-2" id="claim-checker">
  <article class="card">
- <h3>Food-to-Meal Builder</h3>
+ <h3>Check a Nutrition Claim</h3>
  <p class="small-text">
- Enter foods your household has right now to see nutrient strengths, practical recipe ideas, and smart foods to add next.
- If a food is not in the list, type it anyway and the tool will still use it.
- Portions are shown with food-appropriate units (for example slices for bread, cups for cooked grains).
+ Type a nutrition belief and get a practical check: likely myth, partly true, or likely fact.
+ The tool gives plain-language explanation plus what to do instead.
  </p>
-
- <div class="form-grid">
  <div class="field">
- <label for="hub-food-input">Add a food</label>
- <input id="hub-food-input" list="hub-food-options" placeholder="Type food name (for example: lentils)" />
- <datalist id="hub-food-options"></datalist>
+ <label for="myth-input">Your claim</label>
+ <input id="myth-input" placeholder="Type a nutrition belief, for example: Healthy food is always too expensive" />
  </div>
- <div class="field" style="align-content: end;">
- <div class="cta-row">
- <button id="hub-add-food" class="btn btn-secondary" type="button">Add Food</button>
- <button id="hub-clear-foods" class="btn btn-secondary" type="button">Clear</button>
- <button id="hub-analyze-foods" class="btn btn-primary" type="button">Analyze Foods</button>
+ <div class="cta-row" style="margin-top: 0.7rem;">
+ <button id="myth-check-btn" class="btn btn-primary" type="button">Check this claim</button>
+ <button id="myth-clear-btn" class="btn btn-secondary" type="button">Clear</button>
  </div>
- </div>
- </div>
+ <article id="myth-result" class="card hide myth-result-card" style="margin-top: 0.85rem; box-shadow: none;"></article>
+ </article>
 
- <div id="hub-selected-foods" class="selected-foods" aria-live="polite"></div>
- <p id="hub-food-status" class="small-text" style="margin: 0.5rem 0 0;"></p>
-
- <div id="hub-food-results" class="grid-3 section hide" style="padding-top: 0.9rem;">
- <article class="card">
- <h4>What You Can Make</h4>
- <ul id="hub-meal-list"></ul>
- </article>
- <article class="card">
- <h4>What You Get From These Foods</h4>
- <ul id="hub-nutrient-list"></ul>
- </article>
- <article class="card">
- <h4>Best Foods to Add Next</h4>
- <ul id="hub-addon-list"></ul>
- </article>
+ <article class="card" id="voice-assistant">
+ <h3>Audio Assistant</h3>
+ <p class="small-text">
+ Built for low-literacy and field use. Choose a mode, then play short, clear spoken guidance.
+ </p>
+ <div class="field">
+ <label for="voice-mode">Voice mode</label>
+ <select id="voice-mode">
+ <option value="standard">Standard</option>
+ <option value="slow">Slow and clear</option>
+ <option value="field">Field mode</option>
+ </select>
+ </div>
+ <div class="cta-row" style="margin-top: 0.7rem;">
+ <button id="voice-play" class="btn btn-primary" type="button">Play</button>
+ <button id="voice-pause" class="btn btn-secondary" type="button">Pause/Resume</button>
+ <button id="voice-replay" class="btn btn-secondary" type="button">Replay</button>
+ <button id="voice-stop" class="btn btn-secondary" type="button">Stop</button>
+ </div>
+ <div id="voice-status" class="small-text" style="margin-top: 0.6rem;"></div>
+ <div id="voice-script" class="voice-script" style="margin-top: 0.8rem;">
+ <p data-voice-chunk="summary">Here is what to watch for. Low appetite, fast weight loss, weakness, and frequent diarrhea can be early nutrition warning signs.</p>
+ <p data-voice-chunk="today">Here is what you can do today. Build meals with one energy food, one protein food, and one protective food, even from pantry items.</p>
+ <p data-voice-chunk="urgent">Get help now if swelling, severe lethargy, confusion in older adults, or rapid child weight loss appears.</p>
  </div>
  </article>
  </section>
 
  <section class="section grid-2">
  <article class="card">
- <h3 data-i18n="learn_quiz_title">Myth vs Fact Quick Check</h3>
- <div id="quiz-shell">
- <p><strong data-i18n="learn_myth_label">Myth:</strong> <span data-i18n="learn_myth_text">"Only expensive foods can prevent malnutrition."</span></p>
+ <h3>Build Better Meals From What You Already Have</h3>
+ <p class="small-text">Use Smart Meal Builder for low-cost meal ideas, nutrient gaps, and affordable add-on foods.</p>
  <div class="cta-row">
- <button type="button" class="btn btn-secondary" data-answer="myth" data-i18n="learn_btn_myth">Myth</button>
- <button type="button" class="btn btn-secondary" data-answer="fact" data-i18n="learn_btn_fact">Fact</button>
- </div>
- <p id="quiz-feedback" class="small-text"></p>
+ <a class="btn btn-primary" href="./meal-builder.html">Open Smart Meal Builder</a>
  </div>
  </article>
-
  <article class="card">
- <h3 data-i18n="learn_audio_title">Audio Assistant</h3>
- <p class="small-text" data-i18n="learn_audio_desc">Tap to hear key guidance in plain language during field visits.</p>
+ <h3>Need local support?</h3>
+ <p class="small-text">If warning signs are increasing or food access is collapsing, use the Resource Map immediately.</p>
  <div class="cta-row">
- <button id="speak-warning" class="btn btn-secondary" type="button" data-i18n="learn_btn_warning">Read warning signs</button>
- <button id="speak-meal" class="btn btn-secondary" type="button" data-i18n="learn_btn_meal">Read meal tips</button>
- </div>
- <div class="alert alert-success" style="margin-top: 0.9rem;" data-i18n="learn_alert_tip">
- Keep instructions short, visual, and repeated during follow-ups for better adoption.
+ <a class="btn btn-secondary" href="./map.html">Open Resource Map</a>
  </div>
  </article>
  </section>
