@@ -846,7 +846,9 @@ textarea:focus {
   background: #fff;
   border-radius: 10px;
   padding: 0.56rem 0.7rem;
+  display: block;
   text-align: left;
+  text-decoration: none;
   font-weight: 700;
   color: var(--ink-soft);
   cursor: pointer;
@@ -868,6 +870,10 @@ textarea:focus {
   min-width: 0;
 }
 
+.tool-focus-actions {
+  margin-bottom: 0.65rem;
+}
+
 .tool-panel {
   display: none;
 }
@@ -875,6 +881,14 @@ textarea:focus {
 .tool-panel.is-active {
   display: grid;
   animation: panelFade 0.22s ease;
+}
+
+.tool-tabs-shell.single-tool-view {
+  grid-template-columns: 1fr;
+}
+
+.tool-tabs-shell.single-tool-view .tool-tabs-nav {
+  display: none;
 }
 
 @keyframes panelFade {

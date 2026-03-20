@@ -45,6 +45,7 @@
 
     const buttons = [...shell.querySelectorAll('.tool-tab-btn[data-tab]')];
     const panels = [...shell.querySelectorAll('.tool-panel[data-tool-tab]')];
+    const focusActions = [...shell.querySelectorAll('[data-focus-actions]')];
     if (!buttons.length || !panels.length) return;
 
     const panelByTab = new Map();
@@ -56,6 +57,33 @@
     buttons.forEach((button) => {
       button.setAttribute('role', 'tab');
     });
+
+    function setFocusMode(enabled) {
+      shell.classList.toggle('single-tool-view', enabled);
+      focusActions.forEach((node) => node.classList.toggle('hide', !enabled));
+      if (Array.isArray(options.focusHideSelectors)) {
+        options.focusHideSelectors.forEach((selector) => {
+          document.querySelectorAll(selector).forEach((node) => {
+            node.classList.toggle('hide', enabled);
+          });
+        });
+      }
+    }
+
+    function getTabFromQuery() {
+      if (!options.queryParam) return null;
+      const params = new URLSearchParams(window.location.search);
+      const candidate = params.get(options.queryParam);
+      return candidate && panelByTab.has(candidate) ? candidate : null;
+    }
+
+    function getTabFromHash() {
+      if (!options.useHash) return null;
+      const hash = String(window.location.hash || '').replace('#', '');
+      if (!hash) return null;
+      const panel = panels.find((item) => item.id === hash);
+      return panel ? panel.dataset.toolTab : null;
+    }
 
     function setActive(tab, opts = {}) {
       const nextPanel = panelByTab.get(tab) || panelByTab.get(options.defaultTab) || panels[0];
@@ -73,36 +101,66 @@
       });
 
       if (opts.syncHash && options.useHash && nextPanel.id) {
-        const currentHash = String(window.location.hash || '').replace('#', '');
-        if (currentHash !== nextPanel.id) {
-          history.replaceState(null, '', `#${nextPanel.id}`);
+        const url = new URL(window.location.href);
+        if (url.hash !== `#${nextPanel.id}`) {
+          url.hash = nextPanel.id;
+          history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
         }
+      }
+
+      if (opts.syncQuery && options.queryParam) {
+        const url = new URL(window.location.href);
+        url.searchParams.set(options.queryParam, nextPanel.dataset.toolTab);
+        if (options.useHash && nextPanel.id) {
+          url.hash = nextPanel.id;
+        }
+        history.pushState(null, '', `${url.pathname}${url.search}${url.hash}`);
       }
     }
 
     buttons.forEach((button) => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', (event) => {
+        if (!button.dataset.tab) return;
+        if (options.queryParam) {
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+          event.preventDefault();
+          setActive(button.dataset.tab, { syncHash: !!options.useHash, syncQuery: true });
+          setFocusMode(true);
+          return;
+        }
         setActive(button.dataset.tab, { syncHash: !!options.useHash });
       });
     });
 
-    function activateFromHash() {
-      if (!options.useHash) return false;
-      const hash = String(window.location.hash || '').replace('#', '');
-      if (!hash) return false;
-      const panel = panels.find((item) => item.id === hash);
-      if (!panel) return false;
-      setActive(panel.dataset.toolTab, { syncHash: false });
-      return true;
+    function activateFromLocation() {
+      const queryTab = getTabFromQuery();
+      if (queryTab) {
+        setActive(queryTab, { syncHash: false, syncQuery: false });
+        setFocusMode(true);
+        return true;
+      }
+
+      const hashTab = getTabFromHash();
+      if (hashTab) {
+        setActive(hashTab, { syncHash: false, syncQuery: false });
+        setFocusMode(false);
+        return true;
+      }
+
+      setFocusMode(false);
+      return false;
     }
 
-    const hasHashPanel = activateFromHash();
-    if (!hasHashPanel) {
-      setActive(options.defaultTab || buttons[0].dataset.tab, { syncHash: false });
+    const hasLocationPanel = activateFromLocation();
+    if (!hasLocationPanel) {
+      setActive(options.defaultTab || buttons[0].dataset.tab, { syncHash: false, syncQuery: false });
     }
 
     if (options.useHash) {
-      window.addEventListener('hashchange', activateFromHash);
+      window.addEventListener('hashchange', activateFromLocation);
+    }
+    if (options.queryParam) {
+      window.addEventListener('popstate', activateFromLocation);
     }
   }
 
@@ -462,15 +520,15 @@
       const actionSet = [];
       if (level === 'High risk') {
         actionSet.push({ title: 'Find verified support now', desc: 'Open Resource Map and route to available support points.', cta: 'Open Resource Map', href: './map.html' });
-        actionSet.push({ title: 'Run urgency escalation', desc: 'Confirm if this pattern should be treated as urgent.', cta: 'Open Urgency Tool', href: './learn.html#tool-escalation' });
-        actionSet.push({ title: 'Improve meals immediately', desc: 'Use Pantry Rescue to close protein and iron gaps quickly.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' });
+        actionSet.push({ title: 'Run urgency escalation', desc: 'Confirm if this pattern should be treated as urgent.', cta: 'Open Urgency Tool', href: './learn.html?tool=escalation#tool-escalation' });
+        actionSet.push({ title: 'Improve meals immediately', desc: 'Use Pantry Rescue to close protein and iron gaps quickly.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' });
       } else if (level === 'Moderate risk') {
-        actionSet.push({ title: 'Use Pantry Rescue', desc: 'Build a practical meal from available foods today.', cta: 'Run Pantry Rescue', href: './learn.html#tool-pantry-rescue' });
-        actionSet.push({ title: 'Use Budget Planner', desc: 'Prioritize low-cost foods before the next grocery trip.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' });
+        actionSet.push({ title: 'Use Pantry Rescue', desc: 'Build a practical meal from available foods today.', cta: 'Run Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' });
+        actionSet.push({ title: 'Use Budget Planner', desc: 'Prioritize low-cost foods before the next grocery trip.', cta: 'Open Budget Planner', href: './learn.html?tool=budget#tool-budget-planner' });
         actionSet.push({ title: 'Re-check in 7 days', desc: 'Track whether warning signs are improving.', cta: 'Take Assessment', href: './assessment.html' });
       } else {
         actionSet.push({ title: 'Keep meals stable', desc: 'Continue balanced meals and monitor for appetite or weight changes.', cta: 'Open Meal Builder', href: './meal-builder.html' });
-        actionSet.push({ title: 'Plan low-cost upgrades', desc: 'Use Budget Planner to prevent future nutrition decline.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' });
+        actionSet.push({ title: 'Plan low-cost upgrades', desc: 'Use Budget Planner to prevent future nutrition decline.', cta: 'Open Budget Planner', href: './learn.html?tool=budget#tool-budget-planner' });
       }
 
       resultNode.classList.remove('hide');
@@ -554,7 +612,7 @@
         : 'No-cook strategy detected: prioritize ready proteins and shelf-stable combinations.';
 
       const actions = [
-        { title: 'Run Pantry Rescue now', desc: 'Convert your current ingredients into a better meal immediately.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+        { title: 'Run Pantry Rescue now', desc: 'Convert your current ingredients into a better meal immediately.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' },
         { title: 'Open Meal Builder', desc: 'Get a larger meal plan after selecting key foods to buy.', cta: 'Open Meal Builder', href: './meal-builder.html' },
         { title: 'Find food support points', desc: 'If budget is collapsing, route to verified support resources.', cta: 'Open Resource Map', href: './map.html' },
       ];
@@ -613,7 +671,7 @@
         explanation: 'Affordable foods can still build nutrition when you prioritize protein and protective foods first.',
         corrected: 'Healthy food does not have to be expensive if we choose high-impact staples.',
         action: 'Use Budget Planner to generate a buy-first list for your budget.',
-        href: './learn.html#tool-budget-planner',
+        href: './learn.html?tool=budget#tool-budget-planner',
       },
       {
         keys: ['overweight', 'cannot be malnourished', 'cant be malnourished'],
@@ -621,7 +679,7 @@
         explanation: 'A person can have enough calories but still lack protein, iron, or vitamins.',
         corrected: 'Weight alone does not rule out malnutrition risk.',
         action: 'Run Risk Checker and Pantry Rescue to assess diet quality and warning signals.',
-        href: './learn.html#tool-risk-checker',
+        href: './learn.html?tool=risk#tool-risk-checker',
       },
       {
         keys: ['older', 'losing weight is normal', 'seniors naturally eat less'],
@@ -629,7 +687,7 @@
         explanation: 'Appetite may change with age, but ongoing weight loss can be a warning sign that needs follow-up.',
         corrected: 'Some appetite change is expected, but persistent weight loss is not automatically normal.',
         action: 'Use Urgency Tool and Resource Map if warning signs continue.',
-        href: './learn.html#tool-escalation',
+        href: './learn.html?tool=escalation#tool-escalation',
       },
       {
         keys: ['protein only', 'only meat', 'protein comes from meat'],
@@ -637,7 +695,7 @@
         explanation: 'Protein also comes from beans, lentils, eggs, yogurt, tofu, nuts, and canned fish.',
         corrected: 'Meat is one source, but many affordable non-meat proteins are available.',
         action: 'Use Budget Planner to prioritize cheaper protein options.',
-        href: './learn.html#tool-budget-planner',
+        href: './learn.html?tool=budget#tool-budget-planner',
       },
       {
         keys: ['skip meals', 'big dinner', 'skipping meals is fine'],
@@ -645,7 +703,7 @@
         explanation: 'Frequent meal skipping can worsen fatigue and nutrient gaps, especially in children and older adults.',
         corrected: 'Smaller consistent meals are usually safer than long meal gaps.',
         action: 'Use Pantry Rescue to build quick low-cost meals from what you already have.',
-        href: './learn.html#tool-pantry-rescue',
+        href: './learn.html?tool=pantry#tool-pantry-rescue',
       },
     ];
 
@@ -668,13 +726,13 @@
         explanation: 'We cannot fully verify that exact claim yet with this quick checker.',
         corrected: 'Use a safer rule: prioritize protein, iron support, and warning-sign tracking.',
         action: 'Use Risk Checker or Budget Planner for a decision-ready next step.',
-        href: './learn.html#tool-risk-checker',
+        href: './learn.html?tool=risk#tool-risk-checker',
       };
 
       const output = match || fallback;
       const actions = [
         { title: 'Run linked tool', desc: output.action, cta: 'Open tool', href: output.href },
-        { title: 'Improve meals now', desc: 'Use Pantry Rescue with foods currently available.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+        { title: 'Improve meals now', desc: 'Use Pantry Rescue with foods currently available.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' },
       ];
 
       resultNode.classList.remove('hide');
@@ -768,13 +826,13 @@
       const actions = [];
       if (level === 'Urgent evaluation recommended') {
         actions.push({ title: 'Route to verified support now', desc: 'Use Resource Map immediately.', cta: 'Open Resource Map', href: './map.html' });
-        actions.push({ title: 'Prepare quick nutrition support', desc: 'Use Pantry Rescue while arranging follow-up.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' });
+        actions.push({ title: 'Prepare quick nutrition support', desc: 'Use Pantry Rescue while arranging follow-up.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' });
       } else if (level === 'Find support this week') {
         actions.push({ title: 'Check nearby support points', desc: 'Find clinics or food support services this week.', cta: 'Open Resource Map', href: './map.html' });
-        actions.push({ title: 'Stabilize household meals', desc: 'Use Budget Planner and Pantry Rescue for immediate meal upgrades.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' });
+        actions.push({ title: 'Stabilize household meals', desc: 'Use Budget Planner and Pantry Rescue for immediate meal upgrades.', cta: 'Open Budget Planner', href: './learn.html?tool=budget#tool-budget-planner' });
       } else if (level === 'Improve meals now') {
-        actions.push({ title: 'Run Pantry Rescue', desc: 'Prioritize protein and protective foods in next meal.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' });
-        actions.push({ title: 'Re-check symptoms', desc: 'Re-run this tool after 3-7 days.', cta: 'Re-run in Action Hub', href: './learn.html#tool-escalation' });
+        actions.push({ title: 'Run Pantry Rescue', desc: 'Prioritize protein and protective foods in next meal.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' });
+        actions.push({ title: 'Re-check symptoms', desc: 'Re-run this tool after 3-7 days.', cta: 'Re-run in Action Hub', href: './learn.html?tool=escalation#tool-escalation' });
       } else {
         actions.push({ title: 'Keep monitoring', desc: 'Track appetite, energy, and meal consistency.', cta: 'Take Assessment', href: './assessment.html' });
       }
@@ -1085,7 +1143,7 @@
       nextStepsNode.innerHTML = `
         <p><strong>Next step 1:</strong> Make the rescue meal today.</p>
         <p><strong>Next step 2:</strong> Add one cheap protein this week.</p>
-        <p><strong>Next step 3:</strong> <a href="./learn.html#tool-risk-checker">Run Risk Checker</a> if warning signs are present.</p>
+        <p><strong>Next step 3:</strong> <a href="./learn.html?tool=risk#tool-risk-checker">Run Risk Checker</a> if warning signs are present.</p>
         <p><strong>Next step 4:</strong> <a href="./map.html">Open Resource Map</a> if access is unstable.</p>
       `;
 
@@ -1093,8 +1151,8 @@
       setStatus(`Rescue plan ready for ${selected.length} food item(s).`);
 
       const nextSteps = [
-        { title: 'Check household risk', desc: 'Use Risk Checker if symptoms or low appetite are present.', cta: 'Open Risk Checker', href: './learn.html#tool-risk-checker' },
-        { title: 'Plan low-cost groceries', desc: 'Use Budget Planner to stabilize nutrition this week.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' },
+        { title: 'Check household risk', desc: 'Use Risk Checker if symptoms or low appetite are present.', cta: 'Open Risk Checker', href: './learn.html?tool=risk#tool-risk-checker' },
+        { title: 'Plan low-cost groceries', desc: 'Use Budget Planner to stabilize nutrition this week.', cta: 'Open Budget Planner', href: './learn.html?tool=budget#tool-budget-planner' },
         { title: 'Find support if access is unstable', desc: 'Locate verified clinics and food support.', cta: 'Open Resource Map', href: './map.html' },
       ];
 
@@ -1306,8 +1364,8 @@
           'Recipe Search by Ingredients',
           'Found recipes based on foods already available at home.',
           [
-            { title: 'Run Pantry Rescue', desc: 'Compare recipe ideas with NutriPath nutrient gap guidance.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
-            { title: 'Generate budget priorities', desc: 'Plan what to buy first to complete better meals.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' },
+            { title: 'Run Pantry Rescue', desc: 'Compare recipe ideas with NutriPath nutrient gap guidance.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' },
+            { title: 'Generate budget priorities', desc: 'Plan what to buy first to complete better meals.', cta: 'Open Budget Planner', href: './learn.html?tool=budget#tool-budget-planner' },
           ],
           'Ingredient recipe search complete. Review top options and missing foods.',
         );
@@ -1359,7 +1417,7 @@
           'Generated recipe options filtered by nutrition targets.',
           [
             { title: 'Use Meal Builder', desc: 'Adapt top recipes to current pantry constraints.', cta: 'Open Meal Builder', href: './meal-builder.html' },
-            { title: 'Check household risk', desc: 'If intake remains low-quality, run quick risk triage.', cta: 'Open Risk Checker', href: './learn.html#tool-risk-checker' },
+            { title: 'Check household risk', desc: 'If intake remains low-quality, run quick risk triage.', cta: 'Open Risk Checker', href: './learn.html?tool=risk#tool-risk-checker' },
           ],
           'Nutrition-based recipe search complete. Review protein and calorie targets.',
         );
@@ -1398,8 +1456,8 @@
           'Recipe Extraction',
           'Extracted a recipe from external URL and summarized key ingredients.',
           [
-            { title: 'Run Pantry Rescue', desc: 'Check if extracted recipe fits current ingredients.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
-            { title: 'Build shopping priorities', desc: 'Prioritize missing foods by impact and budget.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' },
+            { title: 'Run Pantry Rescue', desc: 'Check if extracted recipe fits current ingredients.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' },
+            { title: 'Build shopping priorities', desc: 'Prioritize missing foods by impact and budget.', cta: 'Open Budget Planner', href: './learn.html?tool=budget#tool-budget-planner' },
           ],
           'Recipe extraction complete. Compare ingredients with pantry and budget tools.',
         );
@@ -1436,7 +1494,7 @@
           'Classified recipe cuisine and confidence for culturally relevant meal planning.',
           [
             { title: 'Search similar nutrition-friendly recipes', desc: 'Use nutrition filters to find related options.', cta: 'Nutrition Search', href: '#recipe-widget' },
-            { title: 'Adapt to pantry reality', desc: 'Use Pantry Rescue for household constraints.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+            { title: 'Adapt to pantry reality', desc: 'Use Pantry Rescue for household constraints.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' },
           ],
           'Cuisine classification complete. Use this to adapt culturally relevant meal choices.',
         );
@@ -1493,8 +1551,8 @@
           'Meal Plan + Shopping List',
           `Generated a ${timeFrame} meal plan with shopping priorities.`,
           [
-            { title: 'Cross-check pantry constraints', desc: 'Use Pantry Rescue if some plan meals are unrealistic.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
-            { title: 'Budget tune-up', desc: 'Use Budget Planner to prioritize must-buy foods first.', cta: 'Open Budget Planner', href: './learn.html#tool-budget-planner' },
+            { title: 'Cross-check pantry constraints', desc: 'Use Pantry Rescue if some plan meals are unrealistic.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' },
+            { title: 'Budget tune-up', desc: 'Use Budget Planner to prioritize must-buy foods first.', cta: 'Open Budget Planner', href: './learn.html?tool=budget#tool-budget-planner' },
           ],
           `Meal plan generation complete for ${timeFrame} timeframe. Shopping list created from recipe ingredients.`,
         );
@@ -1527,7 +1585,7 @@
           'UPC Product Lookup',
           'Looked up grocery product details for decision support.',
           [
-            { title: 'Check nutrition quality', desc: 'If product is highly processed, run Pantry Rescue for balancing guidance.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+            { title: 'Check nutrition quality', desc: 'If product is highly processed, run Pantry Rescue for balancing guidance.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' },
           ],
           'UPC lookup complete. Review product category and badges before purchase.',
         );
@@ -1644,7 +1702,7 @@
           'Provided recipe direction based on user question and available API tools.',
           [
             { title: 'Run ingredient search', desc: 'Find practical recipes with currently available foods.', cta: 'Ingredient search', href: '#recipe-widget' },
-            { title: 'Run Pantry Rescue', desc: 'Check if recipes fit nutrition-risk constraints.', cta: 'Open Pantry Rescue', href: './learn.html#tool-pantry-rescue' },
+            { title: 'Run Pantry Rescue', desc: 'Check if recipes fit nutrition-risk constraints.', cta: 'Open Pantry Rescue', href: './learn.html?tool=pantry#tool-pantry-rescue' },
           ],
           'Recipe helper responded. Review suggested next actions and related tools.',
         );
@@ -1659,8 +1717,18 @@
   const voice = buildVoiceSupport();
   const engine = buildNextStepEngine();
 
-  initToolTabs('action-tools-shell', { defaultTab: 'risk', useHash: true });
-  initToolTabs('recipe-tools-shell', { defaultTab: 'ingredients', useHash: false });
+  initToolTabs('action-tools-shell', {
+    defaultTab: 'risk',
+    useHash: true,
+    queryParam: 'tool',
+    focusHideSelectors: ['#tool-next-steps', '#voice-support'],
+  });
+  initToolTabs('recipe-tools-shell', {
+    defaultTab: 'ingredients',
+    useHash: false,
+    queryParam: 'recipeTool',
+    focusHideSelectors: ['#meal-rescue-builder', '#meal-links'],
+  });
 
   initRiskChecker(engine, voice);
   initBudgetPlanner(engine, voice);

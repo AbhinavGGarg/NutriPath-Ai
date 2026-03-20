@@ -30,7 +30,7 @@
  </p>
  </section>
 
- <section class="section">
+ <section class="section" id="meal-rescue-builder">
  <article class="card">
  <h3>Build from real constraints</h3>
  <p class="small-text">
@@ -96,18 +96,21 @@
 
  <div class="tool-tabs-shell recipe-tabs-shell" id="recipe-tools-shell">
  <aside class="tool-tabs-nav recipe-tabs-nav" role="tablist" aria-label="Recipe tools">
- <button class="tool-tab-btn active" type="button" data-tab="ingredients">Ingredients Search</button>
- <button class="tool-tab-btn" type="button" data-tab="nutrition">Nutrition Search</button>
- <button class="tool-tab-btn" type="button" data-tab="extract">Extract From URL</button>
- <button class="tool-tab-btn" type="button" data-tab="classify">Cuisine Classifier</button>
- <button class="tool-tab-btn" type="button" data-tab="mealplan">Meal Plan + Shopping</button>
- <button class="tool-tab-btn" type="button" data-tab="upc">UPC Lookup</button>
- <button class="tool-tab-btn" type="button" data-tab="ner">Food Detect</button>
- <button class="tool-tab-btn" type="button" data-tab="fun">Trivia + Jokes</button>
- <button class="tool-tab-btn" type="button" data-tab="chat">Recipe Helper</button>
+ <a class="tool-tab-btn active" href="./meal-builder.html?recipeTool=ingredients#recipe-widget" data-tab="ingredients">Ingredients Search</a>
+ <a class="tool-tab-btn" href="./meal-builder.html?recipeTool=nutrition#recipe-widget" data-tab="nutrition">Nutrition Search</a>
+ <a class="tool-tab-btn" href="./meal-builder.html?recipeTool=extract#recipe-widget" data-tab="extract">Extract From URL</a>
+ <a class="tool-tab-btn" href="./meal-builder.html?recipeTool=classify#recipe-widget" data-tab="classify">Cuisine Classifier</a>
+ <a class="tool-tab-btn" href="./meal-builder.html?recipeTool=mealplan#recipe-widget" data-tab="mealplan">Meal Plan + Shopping</a>
+ <a class="tool-tab-btn" href="./meal-builder.html?recipeTool=upc#recipe-widget" data-tab="upc">UPC Lookup</a>
+ <a class="tool-tab-btn" href="./meal-builder.html?recipeTool=ner#recipe-widget" data-tab="ner">Food Detect</a>
+ <a class="tool-tab-btn" href="./meal-builder.html?recipeTool=fun#recipe-widget" data-tab="fun">Trivia + Jokes</a>
+ <a class="tool-tab-btn" href="./meal-builder.html?recipeTool=chat#recipe-widget" data-tab="chat">Recipe Helper</a>
  </aside>
 
  <div class="tool-tabs-panels">
+ <div class="tool-focus-actions hide" data-focus-actions>
+ <a class="btn btn-secondary btn-small" href="./meal-builder.html#recipe-widget">View all recipe tools</a>
+ </div>
  <article class="card recipe-tool tool-panel is-active" data-tool-tab="ingredients">
  <h4>What's In Your Fridge Search</h4>
  <div class="field">
@@ -221,13 +224,13 @@
  </article>
  </section>
 
- <section class="section grid-2">
+ <section class="section grid-2" id="meal-links">
  <article class="card">
  <h3>Need action tools?</h3>
  <p class="small-text">Use Action Hub to run risk checks, urgency escalation, claim checks, and budget recovery planning.</p>
  <div class="cta-row">
- <a class="btn btn-secondary" href="./learn.html#tool-risk-checker">Open Action Hub</a>
- <a class="btn btn-secondary" href="./learn.html#tool-claim-checker">Check a nutrition claim</a>
+ <a class="btn btn-secondary" href="./learn.html?tool=risk#tool-risk-checker">Open Action Hub</a>
+ <a class="btn btn-secondary" href="./learn.html?tool=claim#tool-claim-checker">Check a nutrition claim</a>
  </div>
  </article>
  <article class="card">

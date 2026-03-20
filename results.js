@@ -148,7 +148,7 @@
         title: 'Child growth support',
         desc: 'Use Action Hub risk and urgency tools to triage child warning patterns quickly.',
         cta: 'Open Action Hub tools',
-        href: './learn.html#tool-risk-checker',
+        href: './learn.html?tool=risk#tool-risk-checker',
       });
     }
 
@@ -157,7 +157,7 @@
         title: 'Older adult nutrition check',
         desc: 'Low appetite and weight change in seniors can be high-risk. Run risk and escalation tools now.',
         cta: 'Open Action Hub tools',
-        href: './learn.html#tool-escalation',
+        href: './learn.html?tool=escalation#tool-escalation',
       });
     }
 
@@ -174,7 +174,7 @@
       title: 'Check harmful nutrition beliefs',
       desc: 'Use claim checker to correct myths that can delay nutrition recovery.',
       cta: 'Check a claim',
-      href: './learn.html#tool-claim-checker',
+      href: './learn.html?tool=claim#tool-claim-checker',
     });
 
     return steps.slice(0, 4);
