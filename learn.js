@@ -39,6 +39,73 @@
     return 'severity-badge severity-low';
   }
 
+  function initToolTabs(shellId, options = {}) {
+    const shell = document.getElementById(shellId);
+    if (!shell) return;
+
+    const buttons = [...shell.querySelectorAll('.tool-tab-btn[data-tab]')];
+    const panels = [...shell.querySelectorAll('.tool-panel[data-tool-tab]')];
+    if (!buttons.length || !panels.length) return;
+
+    const panelByTab = new Map();
+    panels.forEach((panel) => {
+      panelByTab.set(panel.dataset.toolTab, panel);
+      panel.setAttribute('role', 'tabpanel');
+    });
+
+    buttons.forEach((button) => {
+      button.setAttribute('role', 'tab');
+    });
+
+    function setActive(tab, opts = {}) {
+      const nextPanel = panelByTab.get(tab) || panelByTab.get(options.defaultTab) || panels[0];
+      if (!nextPanel) return;
+
+      buttons.forEach((button) => {
+        const isActive = button.dataset.tab === nextPanel.dataset.toolTab;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      panels.forEach((panel) => {
+        const isActive = panel === nextPanel;
+        panel.classList.toggle('is-active', isActive);
+      });
+
+      if (opts.syncHash && options.useHash && nextPanel.id) {
+        const currentHash = String(window.location.hash || '').replace('#', '');
+        if (currentHash !== nextPanel.id) {
+          history.replaceState(null, '', `#${nextPanel.id}`);
+        }
+      }
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setActive(button.dataset.tab, { syncHash: !!options.useHash });
+      });
+    });
+
+    function activateFromHash() {
+      if (!options.useHash) return false;
+      const hash = String(window.location.hash || '').replace('#', '');
+      if (!hash) return false;
+      const panel = panels.find((item) => item.id === hash);
+      if (!panel) return false;
+      setActive(panel.dataset.toolTab, { syncHash: false });
+      return true;
+    }
+
+    const hasHashPanel = activateFromHash();
+    if (!hasHashPanel) {
+      setActive(options.defaultTab || buttons[0].dataset.tab, { syncHash: false });
+    }
+
+    if (options.useHash) {
+      window.addEventListener('hashchange', activateFromHash);
+    }
+  }
+
   function buildVoiceSupport() {
     const playBtn = document.getElementById('voice-play-result');
     const replayBtn = document.getElementById('voice-replay-result');
@@ -1591,6 +1658,9 @@
 
   const voice = buildVoiceSupport();
   const engine = buildNextStepEngine();
+
+  initToolTabs('action-tools-shell', { defaultTab: 'risk', useHash: true });
+  initToolTabs('recipe-tools-shell', { defaultTab: 'ingredients', useHash: false });
 
   initRiskChecker(engine, voice);
   initBudgetPlanner(engine, voice);

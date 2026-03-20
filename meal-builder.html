@@ -94,8 +94,21 @@
  a simple recipe chatbot helper.
  </p>
 
- <div class="recipe-widget-grid">
- <article class="card recipe-tool">
+ <div class="tool-tabs-shell recipe-tabs-shell" id="recipe-tools-shell">
+ <aside class="tool-tabs-nav recipe-tabs-nav" role="tablist" aria-label="Recipe tools">
+ <button class="tool-tab-btn active" type="button" data-tab="ingredients">Ingredients Search</button>
+ <button class="tool-tab-btn" type="button" data-tab="nutrition">Nutrition Search</button>
+ <button class="tool-tab-btn" type="button" data-tab="extract">Extract From URL</button>
+ <button class="tool-tab-btn" type="button" data-tab="classify">Cuisine Classifier</button>
+ <button class="tool-tab-btn" type="button" data-tab="mealplan">Meal Plan + Shopping</button>
+ <button class="tool-tab-btn" type="button" data-tab="upc">UPC Lookup</button>
+ <button class="tool-tab-btn" type="button" data-tab="ner">Food Detect</button>
+ <button class="tool-tab-btn" type="button" data-tab="fun">Trivia + Jokes</button>
+ <button class="tool-tab-btn" type="button" data-tab="chat">Recipe Helper</button>
+ </aside>
+
+ <div class="tool-tabs-panels">
+ <article class="card recipe-tool tool-panel is-active" data-tool-tab="ingredients">
  <h4>What's In Your Fridge Search</h4>
  <div class="field">
  <label for="recipe-ingredients-input">Ingredients</label>
@@ -105,7 +118,7 @@
  <div id="recipe-ingredients-result" class="recipe-result"></div>
  </article>
 
- <article class="card recipe-tool">
+ <article class="card recipe-tool tool-panel" data-tool-tab="nutrition">
  <h4>Nutrition Requirement Search</h4>
  <div class="form-grid">
  <div class="field">
@@ -125,7 +138,7 @@
  <div id="recipe-nutrition-result" class="recipe-result"></div>
  </article>
 
- <article class="card recipe-tool">
+ <article class="card recipe-tool tool-panel" data-tool-tab="extract">
  <h4>Extract Recipe From Website</h4>
  <div class="field">
  <label for="recipe-url-input">Recipe URL</label>
@@ -135,7 +148,7 @@
  <div id="recipe-extract-result" class="recipe-result"></div>
  </article>
 
- <article class="card recipe-tool">
+ <article class="card recipe-tool tool-panel" data-tool-tab="classify">
  <h4>Classify Recipe Type / Cuisine</h4>
  <div class="field">
  <label for="recipe-classify-input">Recipe title or description</label>
@@ -145,7 +158,7 @@
  <div id="recipe-classify-result" class="recipe-result"></div>
  </article>
 
- <article class="card recipe-tool">
+ <article class="card recipe-tool tool-panel" data-tool-tab="mealplan">
  <h4>Generate Meal Plan + Shopping List</h4>
  <div class="form-grid">
  <div class="field">
@@ -164,7 +177,7 @@
  <div id="recipe-meal-result" class="recipe-result"></div>
  </article>
 
- <article class="card recipe-tool">
+ <article class="card recipe-tool tool-panel" data-tool-tab="upc">
  <h4>UPC Product Lookup (US)</h4>
  <div class="field">
  <label for="recipe-upc-input">UPC code</label>
@@ -174,7 +187,7 @@
  <div id="recipe-upc-result" class="recipe-result"></div>
  </article>
 
- <article class="card recipe-tool">
+ <article class="card recipe-tool tool-panel" data-tool-tab="ner">
  <h4>Detect Food In Text (NER)</h4>
  <div class="field">
  <label for="recipe-ner-input">Text</label>
@@ -184,7 +197,7 @@
  <div id="recipe-ner-result" class="recipe-result"></div>
  </article>
 
- <article class="card recipe-tool">
+ <article class="card recipe-tool tool-panel" data-tool-tab="fun">
  <h4>Food Trivia + Jokes</h4>
  <p class="small-text">Use this as engagement support while users build meal plans.</p>
  <div class="cta-row">
@@ -194,7 +207,7 @@
  <div id="recipe-fun-result" class="recipe-result"></div>
  </article>
 
- <article class="card recipe-tool">
+ <article class="card recipe-tool tool-panel" data-tool-tab="chat">
  <h4>Recipe Chatbot Helper</h4>
  <div class="field">
  <label for="recipe-chat-input">Ask a recipe question</label>
@@ -203,6 +216,7 @@
  <div class="cta-row"><button id="recipe-chat-btn" class="btn btn-primary btn-small" type="button">Ask helper</button></div>
  <div id="recipe-chat-result" class="recipe-result"></div>
  </article>
+ </div>
  </div>
  </article>
  </section>

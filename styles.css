@@ -826,6 +826,68 @@ textarea:focus {
   gap: 0.8rem;
 }
 
+.tool-tabs-shell {
+  display: grid;
+  grid-template-columns: minmax(210px, 240px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.tool-tabs-nav {
+  display: grid;
+  gap: 0.45rem;
+  position: sticky;
+  top: 5.2rem;
+}
+
+.tool-tab-btn {
+  appearance: none;
+  border: 1px solid rgba(11, 60, 93, 0.14);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.56rem 0.7rem;
+  text-align: left;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.tool-tab-btn:hover {
+  border-color: rgba(23, 163, 152, 0.55);
+  color: var(--primary);
+}
+
+.tool-tab-btn.active {
+  border-color: rgba(23, 163, 152, 0.75);
+  background: rgba(23, 163, 152, 0.16);
+  color: var(--primary);
+}
+
+.tool-tabs-panels {
+  min-width: 0;
+}
+
+.tool-panel {
+  display: none;
+}
+
+.tool-panel.is-active {
+  display: grid;
+  animation: panelFade 0.22s ease;
+}
+
+@keyframes panelFade {
+  from {
+    opacity: 0.2;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .action-tool-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -932,6 +994,14 @@ textarea:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
   margin-top: 0.9rem;
+}
+
+.recipe-tabs-shell {
+  margin-top: 0.9rem;
+}
+
+.recipe-tabs-nav {
+  position: static;
 }
 
 .recipe-tool {
@@ -1178,12 +1248,14 @@ textarea:focus {
   }
 
   .action-tool-grid,
+  .tool-tabs-shell,
   .tool-columns {
     grid-template-columns: 1fr;
   }
 
-  .recipe-widget-grid {
-    grid-template-columns: 1fr;
+  .tool-tabs-nav {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   #resource-map {
@@ -1218,6 +1290,10 @@ textarea:focus {
 
   .auth-controls {
     width: 100%;
+  }
+
+  .tool-tabs-nav {
+    grid-template-columns: 1fr;
   }
 
   .lang-widget {

@@ -35,8 +35,17 @@
  </p>
  </section>
 
- <section class="section action-tool-grid">
- <article class="card tool-card" id="tool-risk-checker">
+ <section class="section tool-tabs-shell" id="action-tools-shell">
+ <aside class="tool-tabs-nav" role="tablist" aria-label="Action tools">
+ <button class="tool-tab-btn active" type="button" data-tab="risk">Risk Checker</button>
+ <button class="tool-tab-btn" type="button" data-tab="budget">Budget Planner</button>
+ <button class="tool-tab-btn" type="button" data-tab="pantry">Pantry Rescue</button>
+ <button class="tool-tab-btn" type="button" data-tab="escalation">Urgency Escalation</button>
+ <button class="tool-tab-btn" type="button" data-tab="claim">Claim Checker</button>
+ </aside>
+
+ <div class="tool-tabs-panels">
+ <article class="card tool-card tool-panel is-active" id="tool-risk-checker" data-tool-tab="risk">
  <h3>Household Nutrition Risk Checker</h3>
  <p class="small-text">Quickly estimate whether a household member may be low, moderate, or high nutrition risk.</p>
  <div class="form-grid">
@@ -79,7 +88,7 @@
  <div id="risk-check-result" class="tool-result hide"></div>
  </article>
 
- <article class="card tool-card" id="tool-budget-planner">
+ <article class="card tool-card tool-panel" id="tool-budget-planner" data-tool-tab="budget">
  <h3>Food Budget Recovery Planner</h3>
  <p class="small-text">Create a realistic low-cost nutrition plan when money, storage, and cooking tools are limited.</p>
  <div class="form-grid">
@@ -116,7 +125,7 @@
  <div id="budget-plan-result" class="tool-result hide"></div>
  </article>
 
- <article class="card tool-card" id="tool-pantry-rescue">
+ <article class="card tool-card tool-panel" id="tool-pantry-rescue" data-tool-tab="pantry">
  <h3>Pantry-to-Meal Rescue Tool</h3>
  <p class="small-text">Input what you have right now and get a practical meal rescue plan with quality feedback.</p>
  <div class="form-grid">
@@ -167,7 +176,7 @@
  </div>
  </article>
 
- <article class="card tool-card" id="tool-escalation">
+ <article class="card tool-card tool-panel" id="tool-escalation" data-tool-tab="escalation">
  <h3>Urgency / Warning Sign Escalation Tool</h3>
  <p class="small-text">Check warning combinations and get safety-oriented escalation guidance.</p>
  <div class="form-grid">
@@ -205,7 +214,7 @@
  <div id="escalation-result" class="tool-result hide"></div>
  </article>
 
- <article class="card tool-card" id="tool-claim-checker">
+ <article class="card tool-card tool-panel" id="tool-claim-checker" data-tool-tab="claim">
  <h3>Nutrition Claim Checker</h3>
  <p class="small-text">Check a belief and get a practical correction with an immediate action.</p>
  <div class="field">
@@ -218,6 +227,7 @@
  </div>
  <div id="myth-result" class="tool-result hide"></div>
  </article>
+ </div>
  </section>
 
  <section class="section">
